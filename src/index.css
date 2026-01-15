@@ -1,0 +1,83 @@
+/* Airbnb-inspired Design System */
+:root {
+  /* Brand Colors */
+  --primary-color: #FF385C;
+  /* Airbnb Red */
+  --primary-hover: #D90B3E;
+  --secondary-color: #008489;
+  /* Teal */
+
+  /* UI Colors */
+  --background-color: #F7F7F7;
+  --card-background: #FFFFFF;
+  --text-primary: #222222;
+  --text-secondary: #717171;
+  --border-color: #DDDDDD;
+
+  /* Status Colors */
+  --color-success: #008489;
+  --color-warning: #FFB400;
+  --color-danger: #C13515;
+
+  /* Spacing & Layout */
+  --border-radius: 16px;
+  --border-radius-sm: 8px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.12);
+  --max-width: 1200px;
+  /* Wider layout */
+
+  /* Typography */
+  --font-family: 'Circular', -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--background-color);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Modern Reset */
+* {
+  box-sizing: border-box;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-weight: 600;
+  transition: transform 0.1s active, opacity 0.2s, background-color 0.2s;
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 1rem;
+}
