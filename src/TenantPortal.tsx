@@ -165,8 +165,9 @@ export function TenantPortal({ tenant, onLogout }: TenantPortalProps) {
                         <h3>New Repair Request</h3>
                         <form onSubmit={handleReportRepair}>
                             <div className="form-group">
-                                <label>Describe the issue</label>
+                                <label htmlFor="repairIssue">Describe the issue</label>
                                 <textarea
+                                    id="repairIssue"
                                     value={repairIssue}
                                     onChange={e => setRepairIssue(e.target.value)}
                                     required
@@ -174,8 +175,8 @@ export function TenantPortal({ tenant, onLogout }: TenantPortalProps) {
                                 />
                             </div>
                             <div className="form-group">
-                                <label>Priority</label>
-                                <select value={repairPriority} onChange={e => setRepairPriority(e.target.value as any)}>
+                                <label htmlFor="repairPriority">Priority</label>
+                                <select id="repairPriority" value={repairPriority} onChange={e => setRepairPriority(e.target.value as any)}>
                                     <option value="Low">Low</option>
                                     <option value="Medium">Medium</option>
                                     <option value="High">High</option>

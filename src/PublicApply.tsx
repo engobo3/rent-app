@@ -59,24 +59,24 @@ export function PublicApply() {
             <div className="form-panel">
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label>Full Name</label>
-                        <input value={name} onChange={e => setName(e.target.value)} required />
+                        <label htmlFor="name">Full Name</label>
+                        <input id="name" value={name} onChange={e => setName(e.target.value)} required />
                     </div>
                     <div className="form-group">
-                        <label>Email Address</label>
-                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <label htmlFor="email">Email Address</label>
+                        <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
                     </div>
                     <div className="form-group">
-                        <label>Phone Number</label>
-                        <input value={phone} onChange={e => setPhone(e.target.value)} required />
+                        <label htmlFor="phone">Phone Number</label>
+                        <input id="phone" value={phone} onChange={e => setPhone(e.target.value)} required />
                     </div>
                     <div className="form-group">
-                        <label>Annual Income (CFA)</label>
-                        <input type="number" value={income} onChange={e => setIncome(e.target.value)} required />
+                        <label htmlFor="income">Annual Income (CFA)</label>
+                        <input id="income" type="number" value={income} onChange={e => setIncome(e.target.value)} required />
                     </div>
                     <div className="form-group">
-                        <label>Desired Unit</label>
-                        <input value={unit} onChange={e => setUnit(e.target.value)} required placeholder="e.g. 101" />
+                        <label htmlFor="unit">Desired Unit</label>
+                        <input id="unit" value={unit} onChange={e => setUnit(e.target.value)} required placeholder="e.g. 101" />
                     </div>
                     <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '20px' }} disabled={isSubmitting}>
                         {isSubmitting ? "Submitting..." : "Submit Application"}
