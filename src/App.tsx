@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import './App.css';
 import type { Tenant } from './types';
@@ -7,13 +7,13 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import toast, { Toaster } from 'react-hot-toast';
 
-// Components
-import { LandlordDashboard } from './LandlordDashboard';
-import { TenantPortal } from './TenantPortal'; // Ensure this uses default export or named export correctly
-import { HomePage } from './HomePage';
-import { LoginPage } from './LoginPage';
-import { Listings } from './Listings.tsx';
-import { PublicApply } from './PublicApply';
+// Lazy Load Components
+const LandlordDashboard = lazy(() => import('./LandlordDashboard').then(module => ({ default: module.LandlordDashboard })));
+const TenantPortal = lazy(() => import('./TenantPortal').then(module => ({ default: module.TenantPortal })));
+const HomePage = lazy(() => import('./HomePage').then(module => ({ default: module.HomePage })));
+const LoginPage = lazy(() => import('./LoginPage').then(module => ({ default: module.LoginPage })));
+const Listings = lazy(() => import('./Listings').then(module => ({ default: module.Listings })));
+const PublicApply = lazy(() => import('./PublicApply').then(module => ({ default: module.PublicApply })));
 
 function PublicLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -85,42 +85,44 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        {/* PUBLIC ROUTES */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/listings" element={
-          <PublicLayout>
-            <div className="container" style={{ padding: '40px 20px' }}>
-              <h1>Available Listings</h1>
-              <Listings />
-            </div>
-          </PublicLayout>
-        } />
-        <Route path="/apply" element={
-          <PublicLayout>
-            <PublicApply />
-          </PublicLayout>
-        } />
-        <Route path="/login" element={<LoginPage />} />
+      <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }}>Loading App...</div>}>
+        <Routes>
+          {/* PUBLIC ROUTES */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/listings" element={
+            <PublicLayout>
+              <div className="container" style={{ padding: '40px 20px' }}>
+                <h1>Available Listings</h1>
+                <Listings />
+              </div>
+            </PublicLayout>
+          } />
+          <Route path="/apply" element={
+            <PublicLayout>
+              <PublicApply />
+            </PublicLayout>
+          } />
+          <Route path="/login" element={<LoginPage />} />
 
-        {/* PROTECTED ROUTES */}
-        <Route path="/dashboard" element={
-          user ? (
-            currentTenant ? <Navigate to="/tenant" /> : <LandlordDashboard user={user} onLogout={() => signOut(auth)} />
-          ) : (
-            <Navigate to="/login" />
-          )
-        } />
+          {/* PROTECTED ROUTES */}
+          <Route path="/dashboard" element={
+            user ? (
+              currentTenant ? <Navigate to="/tenant" /> : <LandlordDashboard user={user} onLogout={() => signOut(auth)} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          } />
 
-        <Route path="/tenant" element={
-          user && currentTenant ? (
-            <TenantPortal tenant={currentTenant} onLogout={() => signOut(auth)} />
-          ) : (
-            <Navigate to="/login" />
-          )
-        } />
+          <Route path="/tenant" element={
+            user && currentTenant ? (
+              <TenantPortal tenant={currentTenant} onLogout={() => signOut(auth)} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          } />
 
-      </Routes>
+        </Routes>
+      </Suspense>
       <Toaster />
     </Router>
   );
