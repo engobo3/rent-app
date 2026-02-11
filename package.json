@@ -15,9 +15,11 @@
     "@stripe/stripe-js": "^8.6.0",
     "fedapay-reactjs": "^1.1.2",
     "firebase": "^12.7.0",
+    "i18next": "^25.8.5",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hot-toast": "^2.6.0",
+    "react-i18next": "^16.5.4",
     "react-router-dom": "^7.11.0",
     "recharts": "^3.6.0"
   },
@@ -39,6 +41,7 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4",
+    "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.0.17"
   }
 }

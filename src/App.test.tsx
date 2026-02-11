@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { vi } from 'vitest';
 import App from './App';
 import * as auth from 'firebase/auth';
 import * as firestore from 'firebase/firestore';
@@ -22,6 +22,9 @@ vi.mock('firebase/firestore', () => ({
   where: vi.fn(),
   onSnapshot: vi.fn(),
   getFirestore: vi.fn(),
+  doc: vi.fn(),
+  getDoc: vi.fn(),
+  setDoc: vi.fn(),
 }));
 
 // Mock child components to simplify App testing
@@ -38,83 +41,88 @@ describe('App', () => {
   });
 
   it('renders loading initially', () => {
-    (auth.onAuthStateChanged as any).mockImplementation(() => vi.fn());
+    (auth.onAuthStateChanged as ReturnType<typeof vi.fn>).mockImplementation(() => vi.fn());
     render(<App />);
     expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
   it('renders HomePage on default route', async () => {
-    (auth.onAuthStateChanged as any).mockImplementation((_auth: any, callback: any) => {
-        callback(null); // No user
-        return vi.fn();
+    (auth.onAuthStateChanged as ReturnType<typeof vi.fn>).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
+      callback(null); // No user
+      return vi.fn();
     });
 
     render(<App />);
 
     await waitFor(() => {
-        expect(screen.getByText('HomePage Component')).toBeInTheDocument();
+      expect(screen.getByText('HomePage Component')).toBeInTheDocument();
     });
   });
 
   it('redirects to login for protected routes when not authenticated', async () => {
-      // We need to simulate the router being at /dashboard, but App handles router internally.
-      // Since App contains the Router, we can't easily set initial route without modifying App or using MemoryRouter inside App (which creates nested routers).
-      // However, App uses <Router> (BrowserRouter). To test routes, we might need to rely on clicking links or modifying the URL.
-      // For unit testing App, it's often better if App accepts a Router or we just test the logic.
-      // Given the code, let's verify that if we start at root, we see HomePage.
+    // We need to simulate the router being at /dashboard, but App handles router internally.
+    // Since App contains the Router, we can't easily set initial route without modifying App or using MemoryRouter inside App (which creates nested routers).
+    // However, App uses <Router> (BrowserRouter). To test routes, we might need to rely on clicking links or modifying the URL.
+    // For unit testing App, it's often better if App accepts a Router or we just test the logic.
+    // Given the code, let's verify that if we start at root, we see HomePage.
 
-      (auth.onAuthStateChanged as any).mockImplementation((_auth: any, callback: any) => {
-        callback(null);
-        return vi.fn();
-      });
-
-      window.history.pushState({}, 'Test Page', '/dashboard');
-      render(<App />);
-
-      await waitFor(() => {
-         // Should redirect to login
-         expect(screen.getByText('LoginPage Component')).toBeInTheDocument();
-      });
-  });
-
-  it('renders LandlordDashboard when authenticated as landlord (no tenant record)', async () => {
-    (auth.onAuthStateChanged as any).mockImplementation((_auth: any, callback: any) => {
-        callback({ email: 'landlord@example.com' });
-        return vi.fn();
-    });
-
-    (firestore.onSnapshot as any).mockImplementation((_query: any, callback: any) => {
-        callback({ empty: true, docs: [] }); // No tenant record found
-        return vi.fn(); // unsubscribe
+    (auth.onAuthStateChanged as ReturnType<typeof vi.fn>).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
+      callback(null);
+      return vi.fn();
     });
 
     window.history.pushState({}, 'Test Page', '/dashboard');
     render(<App />);
 
     await waitFor(() => {
-        expect(screen.getByText('LandlordDashboard Component')).toBeInTheDocument();
+      // Should redirect to login
+      expect(screen.getByText('LoginPage Component')).toBeInTheDocument();
+    });
+  });
+
+  it('renders LandlordDashboard when authenticated as landlord (no tenant record)', async () => {
+    (auth.onAuthStateChanged as ReturnType<typeof vi.fn>).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
+      callback({ uid: 'user1', email: 'landlord@example.com' });
+      return vi.fn();
+    });
+
+    (firestore.getDoc as ReturnType<typeof vi.fn>).mockResolvedValue({
+      exists: () => true,
+      data: () => ({ role: 'landlord' }),
+    });
+
+    window.history.pushState({}, 'Test Page', '/dashboard');
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText('LandlordDashboard Component')).toBeInTheDocument();
     });
   });
 
   it('renders TenantPortal when authenticated as tenant', async () => {
-    (auth.onAuthStateChanged as any).mockImplementation((_auth: any, callback: any) => {
-        callback({ email: 'tenant@example.com' });
-        return vi.fn();
+    (auth.onAuthStateChanged as ReturnType<typeof vi.fn>).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
+      callback({ uid: 'user2', email: 'tenant@example.com' });
+      return vi.fn();
     });
 
-    (firestore.onSnapshot as any).mockImplementation((_query: any, callback: any) => {
-        callback({
-            empty: false,
-            docs: [{ id: 'tenant1', data: () => ({ name: 'Tenant Name' }) }]
-        });
-        return vi.fn();
+    (firestore.getDoc as ReturnType<typeof vi.fn>).mockResolvedValue({
+      exists: () => true,
+      data: () => ({ role: 'tenant' }),
+    });
+
+    (firestore.onSnapshot as ReturnType<typeof vi.fn>).mockImplementation((_query: unknown, callback: (snapshot: { empty: boolean; docs: unknown[] }) => void) => {
+      callback({
+        empty: false,
+        docs: [{ id: 'tenant1', data: () => ({ name: 'Tenant Name' }) }]
+      });
+      return vi.fn();
     });
 
     window.history.pushState({}, 'Test Page', '/tenant');
     render(<App />);
 
     await waitFor(() => {
-        expect(screen.getByText('TenantPortal Component')).toBeInTheDocument();
+      expect(screen.getByText('TenantPortal Component')).toBeInTheDocument();
     });
   });
 });

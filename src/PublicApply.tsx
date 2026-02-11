@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { db } from './firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 
 export function PublicApply() {
+    const { t } = useTranslation(['public', 'common']);
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
@@ -20,15 +22,15 @@ export function PublicApply() {
         setIsSubmitting(true);
 
         try {
-            // In a real app, 'ownerId' would be dynamic based on the listing. 
+            // In a real app, 'ownerId' would be dynamic based on the listing.
             // For now, we assume a single landlord or handle it via admin logic.
             // We'll write to 'applications' and let any landlord see it (or filter later).
             // Since we track 'ownerId' in application, we need to know WHO owns the unit.
-            // Ideally 'listingId' helps us look that up. 
+            // Ideally 'listingId' helps us look that up.
 
-            // For MVP simplification: We'll add a dummy ownerId or fetch it? 
+            // For MVP simplification: We'll add a dummy ownerId or fetch it?
             // We'll require the listingId param.
-            // Actually, let's just make it "Pending" and allow ANY landlord to claim/see it? 
+            // Actually, let's just make it "Pending" and allow ANY landlord to claim/see it?
             // Or better: pass ownerId in URL or fetch listing.
             // Let's assume searchParams has `ownerId` too or we just save it without ownerId first?
             // Existing app relies on 'where("ownerId", "==", user.uid)'. So without ownerId, no one sees it.
@@ -43,46 +45,61 @@ export function PublicApply() {
                 name, email, phone, income: parseFloat(income), desiredUnit: unit, status: 'pending', date: new Date().toLocaleDateString()
             });
 
-            toast.success("Application submitted successfully!");
+            toast.success(t('apply.submitted'));
             setTimeout(() => navigate('/'), 2000);
 
-        } catch (error: any) {
-            toast.error("Submission failed: " + error.message);
+        } catch (error) {
+            toast.error(t('apply.submitFailed', { message: (error as Error).message }));
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
-        <div style={{ maxWidth: '600px', margin: '40px auto', padding: '20px' }}>
-            <h1 style={{ textAlign: 'center', marginBottom: '30px' }}>Rental Application</h1>
-            <div className="form-panel">
-                <form onSubmit={handleSubmit}>
+        <div style={{ maxWidth: '700px', margin: '0 auto 60px', padding: 'clamp(20px, 5vw, 40px)', background: 'white', border: '1px solid #eee' }}>
+            <h1 style={{
+                textAlign: 'center',
+                marginBottom: '40px',
+                textTransform: 'uppercase',
+                letterSpacing: '2px',
+                fontSize: 'clamp(1.5rem, 4vw, 1.8rem)',
+                color: 'var(--secondary-color)'
+            }}>
+                {t('apply.title')}
+            </h1>
+
+            <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '25px' }}>
+                <div className="form-row-responsive" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '20px' }}>
                     <div className="form-group">
-                        <label htmlFor="name">Full Name</label>
-                        <input id="name" value={name} onChange={e => setName(e.target.value)} required />
+                        <label htmlFor="name" style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#666' }}>{t('apply.fullName')}</label>
+                        <input id="name" value={name} onChange={e => setName(e.target.value)} required style={{ width: '100%', padding: '14px', border: '1px solid #ddd', outline: 'none', borderRadius: '8px', fontSize: '16px' }} />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="email">Email Address</label>
-                        <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <label htmlFor="email" style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#666' }}>{t('apply.email')}</label>
+                        <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: '100%', padding: '14px', border: '1px solid #ddd', outline: 'none', borderRadius: '8px', fontSize: '16px' }} />
+                    </div>
+                </div>
+
+                <div className="form-row-responsive" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '20px' }}>
+                    <div className="form-group">
+                        <label htmlFor="phone" style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#666' }}>{t('apply.phone')}</label>
+                        <input id="phone" value={phone} onChange={e => setPhone(e.target.value)} required style={{ width: '100%', padding: '14px', border: '1px solid #ddd', outline: 'none', borderRadius: '8px', fontSize: '16px' }} />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="phone">Phone Number</label>
-                        <input id="phone" value={phone} onChange={e => setPhone(e.target.value)} required />
+                        <label htmlFor="income" style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#666' }}>{t('apply.income')}</label>
+                        <input id="income" type="number" value={income} onChange={e => setIncome(e.target.value)} required style={{ width: '100%', padding: '14px', border: '1px solid #ddd', outline: 'none', borderRadius: '8px', fontSize: '16px' }} />
                     </div>
-                    <div className="form-group">
-                        <label htmlFor="income">Annual Income (CFA)</label>
-                        <input id="income" type="number" value={income} onChange={e => setIncome(e.target.value)} required />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="unit">Desired Unit</label>
-                        <input id="unit" value={unit} onChange={e => setUnit(e.target.value)} required placeholder="e.g. 101" />
-                    </div>
-                    <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '20px' }} disabled={isSubmitting}>
-                        {isSubmitting ? "Submitting..." : "Submit Application"}
-                    </button>
-                </form>
-            </div>
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="unit" style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#666' }}>{t('apply.desiredUnit')}</label>
+                    <input id="unit" value={unit} onChange={e => setUnit(e.target.value)} required placeholder={t('apply.unitPlaceholder')} style={{ width: '100%', padding: '14px', border: '1px solid #ddd', outline: 'none', borderRadius: '8px', fontSize: '16px' }} />
+                </div>
+
+                <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '20px', padding: '15px', minHeight: '50px' }} disabled={isSubmitting}>
+                    {isSubmitting ? t('apply.submitting') : t('apply.submitApplication')}
+                </button>
+            </form>
             <Toaster position="top-right" />
         </div>
     );

@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { vi } from 'vitest';
 import { PaymentModal } from './PaymentModal';
 import * as functions from 'firebase/functions';
 
@@ -23,7 +23,7 @@ const mockElements = {
 };
 
 vi.mock('@stripe/react-stripe-js', () => ({
-  Elements: ({ children }: { children: any }) => <div>{children}</div>,
+  Elements: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   PaymentElement: () => <div data-testid="payment-element">Payment Element</div>,
   useStripe: () => mockStripe,
   useElements: () => mockElements,
@@ -34,65 +34,65 @@ vi.mock('@stripe/stripe-js', () => ({
 }));
 
 describe('PaymentModal', () => {
-    const defaultProps = {
-        amount: 5000,
-        tenantId: 't1',
-        onSuccess: vi.fn(),
-        onCancel: vi.fn(),
-    };
+  const defaultProps = {
+    amount: 5000,
+    tenantId: 't1',
+    onSuccess: vi.fn(),
+    onCancel: vi.fn(),
+  };
 
-    beforeEach(() => {
-        vi.clearAllMocks();
-        // Mock creating payment intent
-        (functions.httpsCallable as any).mockReturnValue(async () => ({
-            data: { clientSecret: 'test_secret' }
-        }));
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Mock creating payment intent
+    (functions.httpsCallable as ReturnType<typeof vi.fn>).mockReturnValue(async () => ({
+      data: { clientSecret: 'test_secret' }
+    }));
+  });
+
+  it('loads client secret and renders form', async () => {
+    render(<PaymentModal {...defaultProps} />);
+
+    expect(screen.getByText('Loading secure payment...')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByText('Card Payment')).toBeInTheDocument();
     });
 
-    it('loads client secret and renders form', async () => {
-        render(<PaymentModal {...defaultProps} />);
+    expect(screen.getByTestId('payment-element')).toBeInTheDocument();
+    expect(screen.getByText('Pay 5000 CFA')).toBeInTheDocument();
+  });
 
-        expect(screen.getByText('Loading secure payment...')).toBeInTheDocument();
+  it('handles payment submission success', async () => {
+    mockStripe.confirmPayment.mockResolvedValue({ error: undefined }); // Success
 
-        await waitFor(() => {
-            expect(screen.getByText('Card Payment')).toBeInTheDocument();
-        });
+    render(<PaymentModal {...defaultProps} />);
 
-        expect(screen.getByTestId('payment-element')).toBeInTheDocument();
-        expect(screen.getByText('Pay 5000 CFA')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Pay 5000 CFA')).toBeInTheDocument();
     });
 
-    it('handles payment submission success', async () => {
-        mockStripe.confirmPayment.mockResolvedValue({ error: undefined }); // Success
+    fireEvent.click(screen.getByText('Pay 5000 CFA'));
 
-        render(<PaymentModal {...defaultProps} />);
+    await waitFor(() => {
+      expect(mockStripe.confirmPayment).toHaveBeenCalled();
+      expect(defaultProps.onSuccess).toHaveBeenCalled();
+    });
+  });
 
-        await waitFor(() => {
-             expect(screen.getByText('Pay 5000 CFA')).toBeInTheDocument();
-        });
+  it('handles payment submission error', async () => {
+    mockStripe.confirmPayment.mockResolvedValue({ error: { message: 'Card declined' } });
 
-        fireEvent.click(screen.getByText('Pay 5000 CFA'));
+    render(<PaymentModal {...defaultProps} />);
 
-        await waitFor(() => {
-            expect(mockStripe.confirmPayment).toHaveBeenCalled();
-            expect(defaultProps.onSuccess).toHaveBeenCalled();
-        });
+    await waitFor(() => {
+      expect(screen.getByText('Pay 5000 CFA')).toBeInTheDocument();
     });
 
-    it('handles payment submission error', async () => {
-        mockStripe.confirmPayment.mockResolvedValue({ error: { message: 'Card declined' } });
+    fireEvent.click(screen.getByText('Pay 5000 CFA'));
 
-        render(<PaymentModal {...defaultProps} />);
-
-        await waitFor(() => {
-             expect(screen.getByText('Pay 5000 CFA')).toBeInTheDocument();
-        });
-
-        fireEvent.click(screen.getByText('Pay 5000 CFA'));
-
-        await waitFor(() => {
-            expect(screen.getByText('Card declined')).toBeInTheDocument();
-            expect(defaultProps.onSuccess).not.toHaveBeenCalled();
-        });
+    await waitFor(() => {
+      expect(screen.getByText('Card declined')).toBeInTheDocument();
+      expect(defaultProps.onSuccess).not.toHaveBeenCalled();
     });
+  });
 });

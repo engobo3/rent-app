@@ -1,0 +1,70 @@
+{
+  "app": {
+    "name": "Xwegbe Vivi",
+    "loading": "Loading...",
+    "beta": "BETA"
+  },
+  "nav": {
+    "home": "Home",
+    "availableUnits": "Available Units",
+    "applyNow": "Apply Now",
+    "dashboard": "Dashboard",
+    "login": "Login",
+    "logout": "Logout",
+    "residentLogin": "Resident Login",
+    "myDashboard": "My Dashboard"
+  },
+  "buttons": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "close": "Close",
+    "submit": "Submit",
+    "manage": "Manage",
+    "confirm": "Confirm"
+  },
+  "status": {
+    "open": "Open",
+    "resolved": "Resolved",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "occupied": "Occupied",
+    "vacant": "Vacant",
+    "cleaning": "Cleaning",
+    "paid": "Paid",
+    "signed": "Signed"
+  },
+  "priority": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "lowPriority": "Low Priority",
+    "mediumPriority": "Medium Priority",
+    "highPriority": "High Priority"
+  },
+  "currency": {
+    "amount": "{{amount}} CFA",
+    "perNight": "{{amount}} CFA / night"
+  },
+  "errors": {
+    "generic": "Error: {{message}}",
+    "fillAllFields": "Please fill all fields",
+    "validAmount": "Please enter a valid amount.",
+    "nameAddressRequired": "Name and Address required"
+  },
+  "toast": {
+    "offline": "You are offline.",
+    "online": "Back online!"
+  },
+  "categories": {
+    "maintenance": "Maintenance",
+    "utilities": "Utilities",
+    "taxes": "Taxes",
+    "other": "Other"
+  },
+  "rentalType": {
+    "longTerm": "Long-Term Rental",
+    "shortTerm": "Short-Term (Airbnb)"
+  }
+}

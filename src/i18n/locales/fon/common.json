@@ -1,0 +1,70 @@
+{
+  "app": {
+    "name": "Xwegbe Vivi",
+    "loading": "Ðiðe...",
+    "beta": "BETA"
+  },
+  "nav": {
+    "home": "Xwé",
+    "availableUnits": "Xwé E Ðò",
+    "applyNow": "Byɔ Dìn",
+    "dashboard": "Tavo",
+    "login": "Byɔ Mɛ",
+    "logout": "Tɔ́n",
+    "residentLogin": "Nɔtɛn Byɔ Mɛ",
+    "myDashboard": "Tavo Ce"
+  },
+  "buttons": {
+    "cancel": "Ðesu",
+    "save": "Hɛn",
+    "delete": "Ðè kpò",
+    "close": "Sú",
+    "submit": "Sɛ́",
+    "manage": "Kpé nukún",
+    "confirm": "Ðɔ é nyí mɔ̌"
+  },
+  "status": {
+    "open": "Hunhun",
+    "resolved": "Ðeɖe",
+    "pending": "Ðò te kpɔ́n",
+    "approved": "Yí gbè",
+    "rejected": "Gbɛ́",
+    "occupied": "Mɛ ɖè",
+    "vacant": "Vɔ́",
+    "cleaning": "Klínklín",
+    "paid": "Sú",
+    "signed": "Sɔ́ alɔ"
+  },
+  "priority": {
+    "low": "Kpɛví",
+    "medium": "Tɛntin",
+    "high": "Gǎn",
+    "lowPriority": "Kpɛví",
+    "mediumPriority": "Tɛntin",
+    "highPriority": "Gǎn"
+  },
+  "currency": {
+    "amount": "{{amount}} CFA",
+    "perNight": "{{amount}} CFA / zǎn"
+  },
+  "errors": {
+    "generic": "Afɔɖóte : {{message}}",
+    "fillAllFields": "Blǒ nǔ lɛ bǐ",
+    "validAmount": "Ðɔ akwɛ ɖagbe.",
+    "nameAddressRequired": "Nyikɔ kpo adlɛsi kpo ɖe na"
+  },
+  "toast": {
+    "offline": "A ɖò ɛntɛnɛti jí ǎ.",
+    "online": "Lɛkɔ wá ɛntɛnɛti jí !"
+  },
+  "categories": {
+    "maintenance": "Huzuhuzu",
+    "utilities": "Azan nǔ lɛ",
+    "taxes": "Takwɛ",
+    "other": "Ðevo"
+  },
+  "rentalType": {
+    "longTerm": "Hwenu Gǎn",
+    "shortTerm": "Hwenu Kpɛví (Airbnb)"
+  }
+}

@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { vi } from 'vitest';
 import { Listings } from './Listings';
 import { MemoryRouter } from 'react-router-dom';
 import * as firestore from 'firebase/firestore';
@@ -24,13 +24,13 @@ describe('Listings', () => {
   });
 
   it('renders loading initially', () => {
-    (firestore.getDocs as any).mockImplementation(() => new Promise(() => {})); // Never resolves
+    (firestore.getDocs as ReturnType<typeof vi.fn>).mockImplementation(() => new Promise(() => { })); // Never resolves
     render(<Listings />);
     expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
   it('renders no listings message when empty', async () => {
-    (firestore.getDocs as any).mockResolvedValueOnce({ docs: [] });
+    (firestore.getDocs as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ docs: [] });
     render(<Listings />);
     await waitFor(() => {
       expect(screen.getByText(/No units currently available/i)).toBeInTheDocument();
@@ -62,7 +62,7 @@ describe('Listings', () => {
       }
     ];
 
-    (firestore.getDocs as any).mockResolvedValueOnce({ docs: mockListings });
+    (firestore.getDocs as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ docs: mockListings });
 
     render(
       <MemoryRouter>
@@ -79,7 +79,7 @@ describe('Listings', () => {
   });
 
   it('applies limit if provided', async () => {
-    (firestore.getDocs as any).mockResolvedValueOnce({ docs: [] });
+    (firestore.getDocs as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ docs: [] });
     render(<Listings limit={3} />);
 
     await waitFor(() => {

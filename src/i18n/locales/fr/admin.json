@@ -1,0 +1,34 @@
+{
+  "header": {
+    "title": "CONSOLE ADMIN"
+  },
+  "tabs": {
+    "overview": "Vue d'ensemble",
+    "properties": "Propriétés",
+    "landlords": "Propriétaires"
+  },
+  "overview": {
+    "totalRevenue": "Revenu Total",
+    "totalProperties": "Total Propriétés",
+    "activeTenants": "Locataires Actifs",
+    "landlords": "Propriétaires",
+    "systemHealth": "Santé du Système",
+    "systemStatus": "Tous les systèmes sont opérationnels. Connectivité de la base de données : Excellente."
+  },
+  "properties": {
+    "title": "Toutes les Propriétés",
+    "noProperties": "Aucune propriété trouvée."
+  },
+  "landlords": {
+    "title": "Propriétaires Enregistrés",
+    "name": "Nom",
+    "email": "Email",
+    "uid": "UID",
+    "joined": "Inscription",
+    "noLandlords": "Aucun propriétaire trouvé.",
+    "na": "N/A"
+  },
+  "errors": {
+    "fetchFailed": "Erreur lors de la récupération des données admin : {{message}}"
+  }
+}

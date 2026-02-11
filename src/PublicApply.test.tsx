@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { vi } from 'vitest';
 import { PublicApply } from './PublicApply';
 import { MemoryRouter } from 'react-router-dom';
 import * as firestore from 'firebase/firestore';
@@ -29,7 +29,7 @@ const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
-    ...actual as any,
+    ...actual as object,
     useNavigate: () => mockNavigate,
   };
 });
@@ -66,7 +66,7 @@ describe('PublicApply', () => {
   });
 
   it('submits form successfully', async () => {
-    (firestore.addDoc as any).mockResolvedValueOnce({ id: 'new-app-id' });
+    (firestore.addDoc as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: 'new-app-id' });
     const toast = await import('react-hot-toast');
 
     render(
@@ -99,7 +99,7 @@ describe('PublicApply', () => {
   });
 
   it('handles submission error', async () => {
-    (firestore.addDoc as any).mockRejectedValueOnce(new Error('Database error'));
+    (firestore.addDoc as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Database error'));
     const toast = await import('react-hot-toast');
 
     render(
@@ -117,7 +117,7 @@ describe('PublicApply', () => {
     fireEvent.click(screen.getByRole('button', { name: /submit application/i }));
 
     await waitFor(() => {
-        expect(toast.default.error).toHaveBeenCalledWith(expect.stringContaining('Submission failed'));
+      expect(toast.default.error).toHaveBeenCalledWith(expect.stringContaining('Submission failed'));
     });
   });
 });

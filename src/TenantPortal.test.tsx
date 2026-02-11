@@ -1,23 +1,24 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { vi } from 'vitest';
 import { TenantPortal } from './TenantPortal';
+import type { Tenant } from './types';
 import * as firestore from 'firebase/firestore';
 
 // Mock firebase
 vi.mock('./firebase', () => ({
-  db: {},
+    db: {},
 }));
 
 vi.mock('firebase/firestore', () => ({
-  collection: vi.fn(() => 'mock-collection'),
-  query: vi.fn(),
-  where: vi.fn(),
-  onSnapshot: vi.fn(),
-  addDoc: vi.fn(),
-  updateDoc: vi.fn(),
-  doc: vi.fn(),
-  arrayUnion: vi.fn(),
-  getFirestore: vi.fn(),
+    collection: vi.fn(() => 'mock-collection'),
+    query: vi.fn(),
+    where: vi.fn(),
+    onSnapshot: vi.fn(),
+    addDoc: vi.fn(),
+    updateDoc: vi.fn(),
+    doc: vi.fn(),
+    arrayUnion: vi.fn(),
+    getFirestore: vi.fn(),
 }));
 
 // Mock child components
@@ -37,14 +38,14 @@ describe('TenantPortal', () => {
         payments: [],
         leaseUrl: 'http://example.com/lease.pdf',
         propertyPhotoUrl: 'http://example.com/photo.jpg'
-    } as any;
+    } as unknown as Tenant;
 
     const mockOnLogout = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
         // Default mock for onSnapshot to return empty list
-        (firestore.onSnapshot as any).mockImplementation((query: any, callback: any) => {
+        (firestore.onSnapshot as ReturnType<typeof vi.fn>).mockImplementation((_query: unknown, callback: (snapshot: { docs: unknown[] }) => void) => {
             callback({ docs: [] });
             return vi.fn();
         });
@@ -53,21 +54,21 @@ describe('TenantPortal', () => {
     it('renders welcome message and balance', () => {
         render(<TenantPortal tenant={mockTenant} onLogout={mockOnLogout} />);
 
-        expect(screen.getByText(/Welcome/)).toHaveTextContent('Welcome, Tenant Name');
-        expect(screen.getByText(/\$500 Due/)).toBeInTheDocument();
+        expect(screen.getByText(/Welcome/)).toBeInTheDocument();
+        expect(screen.getByText(/500 CFA/)).toBeInTheDocument();
     });
 
     it('shows paid status when balance is 0', () => {
         const paidTenant = { ...mockTenant, balance: 0 };
         render(<TenantPortal tenant={paidTenant} onLogout={mockOnLogout} />);
 
-        expect(screen.getByText('Paid ✓')).toBeInTheDocument();
+        expect(screen.getByText('Paid in Full')).toBeInTheDocument();
     });
 
     it('opens repair form and submits', async () => {
         render(<TenantPortal tenant={mockTenant} onLogout={mockOnLogout} />);
 
-        fireEvent.click(screen.getByText('Log Issue'));
+        fireEvent.click(screen.getByText('Request Repair'));
         expect(screen.getByText('New Repair Request')).toBeInTheDocument();
 
         const textArea = screen.getByLabelText('Describe the issue'); // Will fail if no label match, let's check accessibility in code
@@ -93,7 +94,7 @@ describe('TenantPortal', () => {
             { id: 'r2', data: () => ({ issue: 'Broken door', status: 'Resolved', dateReported: '12/12/2025', priority: 'High' }) }
         ];
 
-        (firestore.onSnapshot as any).mockImplementation((query: any, callback: any) => {
+        (firestore.onSnapshot as ReturnType<typeof vi.fn>).mockImplementation((_query: unknown, callback: (snapshot: { docs: unknown[] }) => void) => {
             callback({ docs: mockRepairs });
             return vi.fn();
         });

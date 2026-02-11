@@ -1,0 +1,65 @@
+{
+  "header": {
+    "myHome": "MY HOME",
+    "resident": "XWEGBE VIVI RESIDENT",
+    "welcome": "Welcome,"
+  },
+  "balance": {
+    "title": "Current Balance",
+    "paidInFull": "Paid in Full",
+    "payWithCard": "Pay with Card",
+    "mobileMoney": "Mobile Money",
+    "thankYou": "Thank you for your timely payment!"
+  },
+  "lease": {
+    "title": "Lease Agreement",
+    "readyForSigning": "Your lease is ready for signing.",
+    "noLeaseUploaded": "No lease uploaded yet. Contact your landlord.",
+    "viewPdf": "View PDF",
+    "signLease": "Sign Lease",
+    "signing": "Signing...",
+    "noLeaseAvailable": "No Lease Available",
+    "signed": "Lease signed successfully!",
+    "signFailed": "Failed to sign lease: {{message}}"
+  },
+  "maintenance": {
+    "title": "Maintenance",
+    "description": "Something broken? Submit a request to our efficient team.",
+    "requestRepair": "Request Repair",
+    "newRequest": "New Repair Request",
+    "describeIssue": "Describe the issue",
+    "priority": "Priority",
+    "submitRequest": "Submit Request",
+    "submitted": "Repair request submitted!",
+    "submitError": "Error: {{message}}",
+    "myRequests": "My Repair Requests",
+    "noRequests": "No requests found.",
+    "reported": "Reported:"
+  },
+  "payment": {
+    "success": "Payment of {{amount}} CFA successful!",
+    "failed": "Payment update failed: {{message}}"
+  },
+  "signature": {
+    "title": "Sign Lease Agreement",
+    "instruction": "Draw your signature below to sign your lease agreement. This acts as your digital signature.",
+    "signHere": "Sign here",
+    "clear": "Clear",
+    "signButton": "Sign Lease"
+  },
+  "paymentModal": {
+    "cardPayment": "Card Payment",
+    "charging": "Charging: {{amount}} CFA",
+    "pay": "Pay {{amount}} CFA",
+    "processing": "Processing...",
+    "loadingPayment": "Loading secure payment...",
+    "unexpectedError": "An unexpected error occurred."
+  },
+  "mobileMoneyModal": {
+    "title": "Mobile Money Payment",
+    "amountToPay": "Amount to Pay:",
+    "securePayment": "Secure payment via FedaPay (MTN/Moov).",
+    "payButton": "Pay {{amount}} CFA",
+    "rentPayment": "Rent payment for tenant {{tenantId}}"
+  }
+}

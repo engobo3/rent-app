@@ -1,4 +1,4 @@
-// @ts-ignore
+import { useTranslation } from 'react-i18next';
 import { FedaCheckoutButton } from 'fedapay-reactjs';
 
 interface MobileMoneyModalProps {
@@ -9,6 +9,7 @@ interface MobileMoneyModalProps {
 }
 
 export function MobileMoneyModal({ amount, tenantId, onSuccess, onCancel }: MobileMoneyModalProps) {
+    const { t } = useTranslation(['tenant', 'common']);
     const PUBLIC_KEY = 'pk_sandbox_vE_32y3wM8336-72M7_315-L'; // Sandbox key
 
 
@@ -17,7 +18,7 @@ export function MobileMoneyModal({ amount, tenantId, onSuccess, onCancel }: Mobi
         public_key: PUBLIC_KEY,
         transaction: {
             amount: amount,
-            description: `Rent payment for tenant ${tenantId}`
+            description: t('mobileMoneyModal.rentPayment', { tenantId })
         },
         currency: {
             iso: 'XOF'
@@ -28,10 +29,10 @@ export function MobileMoneyModal({ amount, tenantId, onSuccess, onCancel }: Mobi
             firstname: tenantId
         },
         button: {
-            text: `Pay ${amount.toLocaleString()} CFA`,
+            text: t('mobileMoneyModal.payButton', { amount: amount.toLocaleString() }),
             class: 'fedapay-button'
         },
-        onComplete: (resp: any) => {
+        onComplete: (resp: { reason: string }) => {
             console.log('FedaPay Payment Response:', resp);
             const reason = resp.reason;
             if (reason === "CHECKOUT_COMPLETED" || reason === "TRANSACTION_APPROVED") {
@@ -59,18 +60,18 @@ export function MobileMoneyModal({ amount, tenantId, onSuccess, onCancel }: Mobi
                     }
                 `}</style>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                    <h2>Mobile Money Payment</h2>
+                    <h2>{t('mobileMoneyModal.title')}</h2>
                     <button onClick={onCancel} style={{ background: 'transparent', color: 'black', fontSize: '1.5rem', border: 'none', cursor: 'pointer' }}>×</button>
                 </div>
 
-                <p style={{ marginBottom: '20px' }}>Amount to Pay: <strong>{amount.toLocaleString()} CFA</strong></p>
+                <p style={{ marginBottom: '20px' }}>{t('mobileMoneyModal.amountToPay')} <strong>{amount.toLocaleString()} CFA</strong></p>
 
                 <FedaCheckoutButton
                     options={checkoutEmbedOptions}
                 />
 
                 <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '15px' }}>
-                    Secure payment via FedaPay (MTN/Moov).
+                    {t('mobileMoneyModal.securePayment')}
                 </p>
             </div>
         </div>

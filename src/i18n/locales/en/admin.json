@@ -1,0 +1,34 @@
+{
+  "header": {
+    "title": "ADMIN CONSOLE"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "properties": "Properties",
+    "landlords": "Landlords"
+  },
+  "overview": {
+    "totalRevenue": "Total Revenue",
+    "totalProperties": "Total Properties",
+    "activeTenants": "Active Tenants",
+    "landlords": "Landlords",
+    "systemHealth": "System Health",
+    "systemStatus": "All systems operational. Database connectivity: Excellent."
+  },
+  "properties": {
+    "title": "All Properties",
+    "noProperties": "No properties found."
+  },
+  "landlords": {
+    "title": "Registered Landlords",
+    "name": "Name",
+    "email": "Email",
+    "uid": "UID",
+    "joined": "Joined",
+    "noLandlords": "No landlords found.",
+    "na": "N/A"
+  },
+  "errors": {
+    "fetchFailed": "Error fetching admin data: {{message}}"
+  }
+}

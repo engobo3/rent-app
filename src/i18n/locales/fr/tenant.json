@@ -1,0 +1,65 @@
+{
+  "header": {
+    "myHome": "MA MAISON",
+    "resident": "XWEGBE VIVI RÉSIDENT",
+    "welcome": "Bienvenue,"
+  },
+  "balance": {
+    "title": "Solde Actuel",
+    "paidInFull": "Entièrement Payé",
+    "payWithCard": "Payer par Carte",
+    "mobileMoney": "Mobile Money",
+    "thankYou": "Merci pour votre paiement ponctuel !"
+  },
+  "lease": {
+    "title": "Contrat de Location",
+    "readyForSigning": "Votre contrat est prêt à être signé.",
+    "noLeaseUploaded": "Aucun contrat téléchargé. Contactez votre propriétaire.",
+    "viewPdf": "Voir le PDF",
+    "signLease": "Signer le Contrat",
+    "signing": "Signature...",
+    "noLeaseAvailable": "Aucun Contrat Disponible",
+    "signed": "Contrat signé avec succès !",
+    "signFailed": "Échec de la signature : {{message}}"
+  },
+  "maintenance": {
+    "title": "Entretien",
+    "description": "Quelque chose est cassé ? Soumettez une demande à notre équipe.",
+    "requestRepair": "Demander une Réparation",
+    "newRequest": "Nouvelle Demande de Réparation",
+    "describeIssue": "Décrivez le problème",
+    "priority": "Priorité",
+    "submitRequest": "Soumettre la Demande",
+    "submitted": "Demande de réparation soumise !",
+    "submitError": "Erreur : {{message}}",
+    "myRequests": "Mes Demandes de Réparation",
+    "noRequests": "Aucune demande trouvée.",
+    "reported": "Signalé :"
+  },
+  "payment": {
+    "success": "Paiement de {{amount}} CFA réussi !",
+    "failed": "Échec de la mise à jour du paiement : {{message}}"
+  },
+  "signature": {
+    "title": "Signer le Contrat de Location",
+    "instruction": "Dessinez votre signature ci-dessous pour signer votre contrat. Ceci sert de signature numérique.",
+    "signHere": "Signez ici",
+    "clear": "Effacer",
+    "signButton": "Signer le Contrat"
+  },
+  "paymentModal": {
+    "cardPayment": "Paiement par Carte",
+    "charging": "Montant : {{amount}} CFA",
+    "pay": "Payer {{amount}} CFA",
+    "processing": "Traitement...",
+    "loadingPayment": "Chargement du paiement sécurisé...",
+    "unexpectedError": "Une erreur inattendue s'est produite."
+  },
+  "mobileMoneyModal": {
+    "title": "Paiement Mobile Money",
+    "amountToPay": "Montant à Payer :",
+    "securePayment": "Paiement sécurisé via FedaPay (MTN/Moov).",
+    "payButton": "Payer {{amount}} CFA",
+    "rentPayment": "Paiement de loyer pour le locataire {{tenantId}}"
+  }
+}

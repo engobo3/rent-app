@@ -1,103 +1,123 @@
 import { Link } from 'react-router-dom';
-import { Listings } from './Listings.tsx';
+import { useTranslation } from 'react-i18next';
 
 export function HomePage() {
+    const { t } = useTranslation(['public', 'common']);
+
     return (
         <div className="homepage">
-            {/* NAVBAR */}
-            <nav style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>🏠 RentApp</div>
-                <div style={{ display: 'flex', gap: '20px' }}>
-                    <Link to="/" style={{ textDecoration: 'none', color: '#333' }}>Home</Link>
-                    <Link to="/listings" style={{ textDecoration: 'none', color: '#333' }}>Listings</Link>
-                    <Link to="/login" className="btn-primary" style={{ textDecoration: 'none', padding: '8px 16px' }}>Login</Link>
-                </div>
-            </nav>
-
             {/* HERO SECTION */}
             <div style={{
-                height: '500px',
-                background: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80)',
+                minHeight: '100vh',
+                height: 'auto',
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.5)), url(https://images.unsplash.com/photo-1523805009345-7448845a9e53?ixlib=rb-4.0.3&auto=format&fit=crop&w=1950&q=80)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                color: 'white',
+                textAlign: 'center',
+                padding: 'clamp(100px, 15vh, 120px) clamp(16px, 4vw, 20px) clamp(60px, 10vh, 80px)'
+            }}>
+                <div style={{ zIndex: 1, width: '100%', maxWidth: '800px', padding: '0 clamp(12px, 3vw, 16px)' }}>
+                    <h1 className="hero-title">
+                        Xwegbe Vivi
+                    </h1>
+                    <p className="hero-subtitle">
+                        {t('home.heroSubtitle')}
+                    </p>
+                    <div style={{ display: 'flex', gap: 'clamp(12px, 3vw, 15px)', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <Link to="/listings" className="btn-primary" style={{ padding: 'clamp(12px, 3vw, 15px) clamp(30px, 6vw, 40px)', textDecoration: 'none', display: 'inline-block', fontSize: 'clamp(0.9rem, 2.5vw, 1rem)' }}>
+                            {t('home.viewUnits')}
+                        </Link>
+                        <Link to="/apply" className="btn-outline" style={{ padding: 'clamp(12px, 3vw, 15px) clamp(30px, 6vw, 40px)', textDecoration: 'none', display: 'inline-block', fontSize: 'clamp(0.9rem, 2.5vw, 1rem)' }}>
+                            {t('common:nav.applyNow')}
+                        </Link>
+                    </div>
+                </div>
+
+                {/* Scroll Indicator */}
+                <div style={{ position: 'absolute', bottom: 'clamp(20px, 4vw, 30px)', animation: 'bounce 2s infinite' }}>
+                    <span style={{ fontSize: 'clamp(1.5rem, 4vw, 2rem)' }}>↓</span>
+                </div>
+            </div>
+
+            {/* INTRO SECTION */}
+            <div style={{ padding: 'clamp(60px, 10vw, 80px) clamp(16px, 4vw, 20px)', textAlign: 'center', background: 'white' }}>
+                <div className="container" style={{ maxWidth: '800px' }}>
+                    <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 2rem)', marginBottom: 'clamp(16px, 3vw, 20px)', textTransform: 'uppercase', letterSpacing: 'clamp(1px, 0.4vw, 2px)' }}>
+                        {t('home.comfortableLiving')}
+                    </h2>
+                    <p style={{ color: '#666', fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)', lineHeight: '1.8' }}>
+                        {t('home.comfortableDescription')}
+                    </p>
+                </div>
+            </div>
+
+            {/* FEATURES GRID */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+                gap: '1px',
+                background: '#eee'
+            }}>
+                <div style={{ background: 'white', padding: 'clamp(30px, 6vw, 50px)', textAlign: 'center' }}>
+                    <div style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', marginBottom: '16px' }}>🔒</div>
+                    <h3 style={{ fontSize: 'clamp(1rem, 3vw, 1.2rem)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>{t('home.secure')}</h3>
+                    <p style={{ color: '#666', fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)', lineHeight: '1.6' }}>{t('home.secureDesc')}</p>
+                </div>
+                <div style={{ background: 'white', padding: 'clamp(30px, 6vw, 50px)', textAlign: 'center' }}>
+                    <div style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', marginBottom: '16px' }}>🏖️</div>
+                    <h3 style={{ fontSize: 'clamp(1rem, 3vw, 1.2rem)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>{t('home.nearBeach')}</h3>
+                    <p style={{ color: '#666', fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)', lineHeight: '1.6' }}>{t('home.nearBeachDesc')}</p>
+                </div>
+                <div style={{ background: 'white', padding: 'clamp(30px, 6vw, 50px)', textAlign: 'center' }}>
+                    <div style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', marginBottom: '16px' }}>⚡</div>
+                    <h3 style={{ fontSize: 'clamp(1rem, 3vw, 1.2rem)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>{t('home.reliablePower')}</h3>
+                    <p style={{ color: '#666', fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)', lineHeight: '1.6' }}>{t('home.reliablePowerDesc')}</p>
+                </div>
+            </div>
+
+            {/* CALL TO ACTION */}
+            <div style={{
+                padding: 'clamp(60px, 10vw, 100px) clamp(16px, 4vw, 20px)',
+                background: '#f4f4f4',
+                textAlign: 'center'
+            }}>
+                <h2 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', marginBottom: 'clamp(16px, 3vw, 20px)', textTransform: 'uppercase', letterSpacing: 'clamp(1px, 0.3vw, 2px)' }}>{t('home.findHome')}</h2>
+                <p style={{ color: '#666', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)', maxWidth: '600px', margin: '0 auto clamp(24px, 5vw, 30px)', lineHeight: '1.7' }}>
+                    {t('home.findHomeDesc')}
+                </p>
+                <div style={{ display: 'flex', gap: 'clamp(12px, 3vw, 15px)', justifyContent: 'center', flexWrap: 'wrap', maxWidth: '400px', margin: '0 auto' }}>
+                    <Link to="/listings" className="btn-primary" style={{ textDecoration: 'none', flex: '1 1 auto', padding: 'clamp(12px, 3vw, 15px) clamp(20px, 4vw, 30px)', fontSize: 'clamp(0.9rem, 2.5vw, 1rem)' }}>{t('home.browseUnits')}</Link>
+                    <Link to="/apply" className="btn-outline" style={{ textDecoration: 'none', flex: '1 1 auto', padding: 'clamp(12px, 3vw, 15px) clamp(20px, 4vw, 30px)', fontSize: 'clamp(0.9rem, 2.5vw, 1rem)', border: '2px solid var(--secondary-color)', color: 'var(--secondary-color)' }}>{t('common:nav.applyNow')}</Link>
+                </div>
+            </div>
+
+            {/* LOCATION SECTION */}
+            <div style={{
+                minHeight: 'clamp(350px, 50vh, 400px)',
+                height: 'auto',
+                padding: 'clamp(60px, 10vw, 80px) clamp(16px, 4vw, 20px)',
+                background: 'linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(https://images.unsplash.com/photo-1572883454114-efb8df45e244?ixlib=rb-4.0.3&auto=format&fit=crop&w=1950&q=80)',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
                 alignItems: 'center',
-                color: 'white',
-                textAlign: 'center'
+                justifyContent: 'center',
+                textAlign: 'center',
+                color: 'white'
             }}>
-                <h1 style={{ fontSize: '3rem', marginBottom: '20px' }}>Find Your Perfect Home</h1>
-                <p style={{ fontSize: '1.2rem', marginBottom: '30px', maxWidth: '600px' }}>
-                    Browse our curated selection of premium rentals. Apply online and move in tomorrow.
-                </p>
-                <Link to="/listings" className="btn-primary" style={{ fontSize: '1.2rem', padding: '12px 30px', textDecoration: 'none' }}>View Available Units</Link>
-            </div>
-
-            {/* FEATURED LISTINGS */}
-            <div className="container" style={{ padding: '40px 20px' }}>
-                <h2 style={{ textAlign: 'center', marginBottom: '30px' }}>Featured Properties</h2>
-                <Listings limit={3} />
-                <div style={{ textAlign: 'center', marginTop: '30px' }}>
-                    <Link to="/listings" className="btn-secondary" style={{ textDecoration: 'none' }}>View All Listings</Link>
+                <div style={{ maxWidth: '800px', width: '100%', padding: '0 clamp(12px, 3vw, 16px)' }}>
+                    <h2 style={{ fontSize: 'clamp(1.75rem, 6vw, 3rem)', marginBottom: 'clamp(16px, 3vw, 20px)', color: 'white', letterSpacing: 'clamp(1px, 0.3vw, 2px)' }}>{t('home.location')}</h2>
+                    <p style={{ fontSize: 'clamp(0.95rem, 3vw, 1.2rem)', maxWidth: '600px', margin: '0 auto clamp(24px, 5vw, 30px)', lineHeight: '1.7' }}>
+                        {t('home.locationDesc')}
+                    </p>
+                    <a href="tel:+22990000000" className="btn-outline" style={{ display: 'inline-block', textDecoration: 'none', minWidth: 'clamp(140px, 30vw, 160px)', padding: 'clamp(10px, 2.5vw, 12px) clamp(20px, 4vw, 24px)', fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>{t('home.contactUs')}</a>
                 </div>
             </div>
-
-            {/* READY TO APPLY */}
-            <div style={{ padding: '60px 20px', background: 'var(--primary-color)', color: 'white', textAlign: 'center' }}>
-                <h2 style={{ marginBottom: '20px', color: 'white' }}>Ready to Move In?</h2>
-                <p style={{ fontSize: '1.2rem', marginBottom: '30px', maxWidth: '700px', margin: '0 auto 30px auto' }}>
-                    Already found your dream unit or want to submit a general application?
-                    Start the process now and get approved in as little as 24 hours.
-                </p>
-                <Link to="/apply" className="btn-secondary" style={{ fontSize: '1.2rem', padding: '12px 30px', textDecoration: 'none', background: 'white', color: 'var(--primary-color)', fontWeight: 'bold' }}>Start Application</Link>
-            </div>
-
-            {/* CONTACT US */}
-            <div style={{ padding: '60px 20px', background: '#f9f9f9' }}>
-                <div className="container" style={{ maxWidth: '1000px', margin: '0 auto' }}>
-                    <h2 style={{ textAlign: 'center', marginBottom: '40px' }}>Contact Us</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '30px' }}>
-                        <div style={{ padding: '30px', background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', textAlign: 'center' }}>
-                            <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>📍</div>
-                            <h3 style={{ marginBottom: '10px', fontSize: '1.2rem', color: '#333' }}>Visit Our Office</h3>
-                            <p style={{ color: '#666', lineHeight: '1.6' }}>
-                                123 Rental Avenue<br />
-                                Suite 100<br />
-                                Cityville, ST 12345
-                            </p>
-                        </div>
-
-                        <div style={{ padding: '30px', background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', textAlign: 'center' }}>
-                            <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>📞</div>
-                            <h3 style={{ marginBottom: '10px', fontSize: '1.2rem', color: '#333' }}>Call Us</h3>
-                            <p style={{ color: '#666', marginBottom: '10px' }}>
-                                <a href="tel:+15551234567" style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 'bold' }}>(555) 123-4567</a>
-                            </p>
-                            <p style={{ fontSize: '0.9rem', color: '#999' }}>
-                                Mon-Fri: 9am - 6pm<br />
-                                Sat: 10am - 4pm
-                            </p>
-                        </div>
-
-                        <div style={{ padding: '30px', background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', textAlign: 'center' }}>
-                            <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>✉️</div>
-                            <h3 style={{ marginBottom: '10px', fontSize: '1.2rem', color: '#333' }}>Email Us</h3>
-                            <p style={{ color: '#666', marginBottom: '15px' }}>
-                                Have questions? Drop us a line anytime.
-                            </p>
-                            <p>
-                                <a href="mailto:info@rentapp.com" style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 'bold' }}>info@rentapp.com</a>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* FOOTER */}
-            <footer style={{ background: '#333', color: 'white', padding: '40px 20px', textAlign: 'center' }}>
-                <p>&copy; {new Date().getFullYear()} RentApp. All rights reserved.</p>
-            </footer>
         </div>
     );
 }

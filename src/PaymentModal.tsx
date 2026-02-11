@@ -1,5 +1,6 @@
 // src/PaymentModal.tsx
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { loadStripe } from '@stripe/stripe-js';
 import {
     PaymentElement,
@@ -27,6 +28,7 @@ interface CheckoutFormProps {
 }
 
 const CheckoutForm = ({ amount, onSuccess, onCancel }: CheckoutFormProps) => {
+    const { t } = useTranslation(['tenant', 'common']);
     const stripe = useStripe();
     const elements = useElements();
     const [errorMessage, setErrorMessage] = useState("");
@@ -49,7 +51,7 @@ const CheckoutForm = ({ amount, onSuccess, onCancel }: CheckoutFormProps) => {
         });
 
         if (error) {
-            setErrorMessage(error.message || "An unexpected error occurred.");
+            setErrorMessage(error.message || t('paymentModal.unexpectedError'));
             setIsProcessing(false);
         } else {
             // Payment Succeeded!
@@ -64,10 +66,10 @@ const CheckoutForm = ({ amount, onSuccess, onCancel }: CheckoutFormProps) => {
 
             <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
                 <button disabled={isProcessing} type="submit" style={{ width: '100%' }}>
-                    {isProcessing ? "Processing..." : `Pay ${amount} CFA`}
+                    {isProcessing ? t('paymentModal.processing') : t('paymentModal.pay', { amount })}
                 </button>
                 <button disabled={isProcessing} type="button" onClick={onCancel} style={{ background: '#666' }}>
-                    Cancel
+                    {t('common:buttons.cancel')}
                 </button>
             </div>
         </form>
@@ -83,6 +85,7 @@ interface PaymentModalProps {
 
 // This wrapper handles the setup logic
 export const PaymentModal = ({ amount, tenantId, onSuccess, onCancel }: PaymentModalProps) => {
+    const { t } = useTranslation(['tenant', 'common']);
     const [clientSecret, setClientSecret] = useState("");
 
     // When modal opens, ask backend for a Client Secret
@@ -90,19 +93,19 @@ export const PaymentModal = ({ amount, tenantId, onSuccess, onCancel }: PaymentM
         const fetchSecret = async () => {
             // Call our Cloud Function
             const createIntent = httpsCallable(functions, 'createPaymentIntent');
-            const result = await createIntent({ amount, tenantId }) as any;
+            const result = await createIntent({ amount, tenantId }) as { data: { clientSecret: string } };
             setClientSecret(result.data.clientSecret);
         };
         fetchSecret();
     }, [amount, tenantId]);
 
-    if (!clientSecret) return <div style={{ padding: '20px' }}>Loading secure payment...</div>;
+    if (!clientSecret) return <div style={{ padding: '20px' }}>{t('paymentModal.loadingPayment')}</div>;
 
     return (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h2>Card Payment</h2>
-                <p>Charging: {amount} CFA</p>
+                <h2>{t('paymentModal.cardPayment')}</h2>
+                <p>{t('paymentModal.charging', { amount })}</p>
                 <Elements stripe={stripePromise} options={{ clientSecret }}>
                     <CheckoutForm amount={amount} onSuccess={onSuccess} onCancel={onCancel} />
                 </Elements>

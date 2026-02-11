@@ -1,0 +1,34 @@
+{
+  "header": {
+    "title": "ADMIN TAVO"
+  },
+  "tabs": {
+    "overview": "Kpɔ́n Bǐ",
+    "properties": "Xwé Lɛ",
+    "landlords": "Xwétɔ́ Lɛ"
+  },
+  "overview": {
+    "totalRevenue": "Akwɛ Bǐ",
+    "totalProperties": "Xwé Bǐ",
+    "activeTenants": "Locataire Lɛ",
+    "landlords": "Xwétɔ́ Lɛ",
+    "systemHealth": "Système",
+    "systemStatus": "Nǔ bǐ ɖò ganji. Base de données : Ðagbe."
+  },
+  "properties": {
+    "title": "Xwé Bǐ",
+    "noProperties": "Xwé ɖě ɖè ǎ."
+  },
+  "landlords": {
+    "title": "Xwétɔ́ E Wlǎn Nyikɔ Lɛ",
+    "name": "Nyikɔ",
+    "email": "Email",
+    "uid": "UID",
+    "joined": "Wlǎn Nyikɔ",
+    "noLandlords": "Xwétɔ́ ɖě ɖè ǎ.",
+    "na": "N/A"
+  },
+  "errors": {
+    "fetchFailed": "Afɔɖóte admin : {{message}}"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "header": {
+    "myHome": "XWÉ CE",
+    "resident": "XWEGBE VIVI NƆTƐN",
+    "welcome": "Kú dó,"
+  },
+  "balance": {
+    "title": "Akwɛ E Kpò Ɔ",
+    "paidInFull": "Sú Bǐ",
+    "payWithCard": "Sú Kpo Carte Kpo",
+    "mobileMoney": "Mobile Money",
+    "thankYou": "Mǐ dó kú nú we nú sísú towe !"
+  },
+  "lease": {
+    "title": "Akɔwé Xwé",
+    "readyForSigning": "Akɔwé towe ɖò te nú alɔ.",
+    "noLeaseUploaded": "Akɔwé ɖě ɖè ǎ. Ðɔ xó nú xwétɔ́ towe.",
+    "viewPdf": "Kpɔ́n PDF",
+    "signLease": "Sɔ́ Alɔ Dó Akɔwé",
+    "signing": "Ðò alɔ sɔ́ wɛ...",
+    "noLeaseAvailable": "Akɔwé Ðě Ðè Ǎ",
+    "signed": "Akɔwé sɔ́ alɔ ganji !",
+    "signFailed": "Alɔ sɔ́ gblé : {{message}}"
+  },
+  "maintenance": {
+    "title": "Huzuhuzu",
+    "description": "Nùɖé gblé ? Sɛ́ byɔ ɖé nú gbɛta mǐtɔn.",
+    "requestRepair": "Byɔ Huzuhuzu",
+    "newRequest": "Byɔ Huzuhuzu Yɔyɔ̌",
+    "describeIssue": "Tinmɛ tagba ɔ",
+    "priority": "Gǎn",
+    "submitRequest": "Sɛ́ Byɔ Ɔ",
+    "submitted": "Byɔ huzuhuzu yì !",
+    "submitError": "Afɔɖóte : {{message}}",
+    "myRequests": "Byɔ Ce Lɛ",
+    "noRequests": "Byɔ ɖě ɖè ǎ.",
+    "reported": "Ðɔ :"
+  },
+  "payment": {
+    "success": "Sísú {{amount}} CFA ganji !",
+    "failed": "Sísú gblé : {{message}}"
+  },
+  "signature": {
+    "title": "Sɔ́ Alɔ Dó Akɔwé Xwé",
+    "instruction": "Wlǎn alɔ towe ɖò dǒ nú akɔwé towe. Éyɛ wɛ nyí alɔ towe.",
+    "signHere": "Sɔ́ alɔ fí",
+    "clear": "Kɔ́n Kpò",
+    "signButton": "Sɔ́ Alɔ Dó Akɔwé"
+  },
+  "paymentModal": {
+    "cardPayment": "Sísú Kpo Carte Kpo",
+    "charging": "Akwɛ : {{amount}} CFA",
+    "pay": "Sú {{amount}} CFA",
+    "processing": "Ðò azɔ̌ wà wɛ...",
+    "loadingPayment": "Ðò sísú ewu ɖiɖe...",
+    "unexpectedError": "Afɔɖóte ɖé tíìn."
+  },
+  "mobileMoneyModal": {
+    "title": "Sísú Mobile Money",
+    "amountToPay": "Akwɛ Bo Na Sú :",
+    "securePayment": "Sísú ewu gbɔn FedaPay (MTN/Moov).",
+    "payButton": "Sú {{amount}} CFA",
+    "rentPayment": "Xwéxo sísú nú locataire {{tenantId}}"
+  }
+}

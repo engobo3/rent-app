@@ -1,0 +1,87 @@
+{
+  "home": {
+    "heroSubtitle": "Xwé Towe Xu Mɛ",
+    "viewUnits": "Kpɔ́n Xwé E Ðò Lɛ",
+    "comfortableLiving": "Gbɛzán Ðagbe Ðò Ekpe",
+    "comfortableDescription": "Ðò Ekpe tokpɔn fífá mɛ, ɖó gǎn kpo xu kpo ɖò Cotonou. Xwé mǐtɔn lɛ nyí ewu bo ɖó jiɖe nú xwédo lɛ kpo azɔ̌watɔ́ lɛ kpo.",
+    "secure": "Ewu",
+    "secureDesc": "Agbahwlɛn kpo ewu 24/24 kpo nú fífá towe.",
+    "nearBeach": "Ðó Xu Gǎn",
+    "nearBeachDesc": "Ðó gǎn kpɛví ɖé dó Atlantiki xu ɖagbe ɔ.",
+    "reliablePower": "Hlɔnhlɔn Ðagbe",
+    "reliablePowerDesc": "Groupe électrogène kpo hlɔnhlɔn kpo bo nɔ xwedó.",
+    "findHome": "Ba Xwé Yɔyɔ̌ Towe",
+    "findHomeDesc": "Hwenu gǎn kpo hwenu kpɛví kpo ɖè. Kpɔ́n xwé lɛ bo byɔ ɛntɛnɛti jí egbè.",
+    "browseUnits": "Kpɔ́n Xwé Lɛ",
+    "location": "Ekpe, Benɛ",
+    "locationDesc": "Tokpɔn ɖé wɛ bo ɖó ali ɖagbe yì Cotonou, asi, wemaxɔ, kpo xu kpo. Fí ɖagbe nú gbɛzán.",
+    "contactUs": "Ðɔ Xó Nú Mǐ"
+  },
+  "header": {
+    "phone": "+229 90 00 00 00"
+  },
+  "footer": {
+    "contactUs": "Ðɔ Xó Nú Mǐ",
+    "companyName": "Xwegbe Vivi",
+    "address": "Ekpe, Sèmè-Podji",
+    "country": "Benɛ",
+    "officeHours": "Ganmɛ",
+    "monFri": "Tɛnigbe - Axɔsugbe : 8h - 18h",
+    "saturday": "Sidɛmɛgbe : 9h - 13h",
+    "sunday": "Vodungbe : Sú",
+    "quickLinks": "Ali Lɛ",
+    "payRent": "Sú Xwéxo",
+    "maintenanceRequest": "Byɔ Huzuhuzu",
+    "about": "Dó Mǐ Wu",
+    "aboutText": "Xwé ewu kpo agbahwlɛn kpo ɖò Ekpe, Benɛ. Hwenu gǎn kpo hwenu kpɛví kpo ɖè.",
+    "copyright": "Xwegbe Vivi. Acɛ Bǐ.",
+    "betaVersion": "Tɛnkpɔn"
+  },
+  "login": {
+    "residentLogin": "Nɔtɛn Byɔ Mɛ",
+    "createAccount": "Ðó Kɔntu",
+    "signIn": "Byɔ Mɛ",
+    "signUp": "Wlǎn Nyikɔ",
+    "email": "Email",
+    "password": "Xósin",
+    "confirmPassword": "Lɛ́ Ðɔ Xósin",
+    "signingIn": "Byɔ Mɛ...",
+    "creatingAccount": "Ðò Kɔntu Blǒ...",
+    "tenantHint": "Nú xwétɔ́ towe ko zé we dó locataire mɛ hǔn, zán email ɖokpo ɔ. È na zɔn we dó xwé towe.",
+    "passwordPlaceholder": "Ðɔ xósin towe",
+    "passwordSignupPlaceholder": "Wekwín 6 ɖokpó ɖò kpɛví",
+    "confirmPlaceholder": "Lɛ́ ɖɔ xósin towe",
+    "loggedIn": "Byɔ mɛ !",
+    "accountCreated": "Kɔntu ɖé ! Ðò yì wɛ...",
+    "noAccount": "Kɔntu ɖé ǎ. Wlǎn nyikɔ hwɛ̌.",
+    "loginFailed": "Byɔ mɛ gblé : {{message}}",
+    "passwordsMismatch": "Xósin lɛ sɔgbe ǎ.",
+    "passwordTooShort": "Xósin ɖó na ɖó wekwín 6 ɖò kpɛví.",
+    "emailExists": "Kɔntu ɖé tíìn ko. Byɔ mɛ.",
+    "signupFailed": "Nyikɔ wlǎn gblé : {{message}}"
+  },
+  "apply": {
+    "title": "Byɔ Xwé",
+    "fullName": "Nyikɔ Blǒbu",
+    "email": "Email",
+    "phone": "Telefoŋu",
+    "income": "Akwɛ Xwè Ðokpo (CFA)",
+    "desiredUnit": "Xwé E Jlǒ",
+    "unitPlaceholder": "kpɔ́ndákpɔ́n : 101",
+    "submitting": "Ðò sɛ́ wɛ...",
+    "submitApplication": "Sɛ́ Byɔ Ɔ",
+    "submitted": "Byɔ ɔ yì ganji !",
+    "submitFailed": "Gblé : {{message}}"
+  },
+  "listings": {
+    "title": "Xwé E Ðò Lɛ",
+    "loading": "Ðiðe...",
+    "noUnits": "Xwé ɖě ɖè ǎ dìn. Lɛkɔ wá kpɔ́n !",
+    "noPhoto": "Fɔtóo Ǎ",
+    "unit": "UNITÉ {{unit}}"
+  },
+  "accessDenied": {
+    "title": "Gbɛ́ Ali",
+    "noTenantRecord": "Mǐ mɔ locataire nú {{email}} ǎ. Ðɔ xó nú xwétɔ́ towe."
+  }
+}

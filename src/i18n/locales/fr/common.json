@@ -1,0 +1,70 @@
+{
+  "app": {
+    "name": "Xwegbe Vivi",
+    "loading": "Chargement...",
+    "beta": "BETA"
+  },
+  "nav": {
+    "home": "Accueil",
+    "availableUnits": "Logements Disponibles",
+    "applyNow": "Postuler",
+    "dashboard": "Tableau de Bord",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "residentLogin": "Connexion Résident",
+    "myDashboard": "Mon Tableau de Bord"
+  },
+  "buttons": {
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "close": "Fermer",
+    "submit": "Soumettre",
+    "manage": "Gérer",
+    "confirm": "Confirmer"
+  },
+  "status": {
+    "open": "Ouvert",
+    "resolved": "Résolu",
+    "pending": "En attente",
+    "approved": "Approuvé",
+    "rejected": "Rejeté",
+    "occupied": "Occupé",
+    "vacant": "Vacant",
+    "cleaning": "Nettoyage",
+    "paid": "Payé",
+    "signed": "Signé"
+  },
+  "priority": {
+    "low": "Basse",
+    "medium": "Moyenne",
+    "high": "Haute",
+    "lowPriority": "Priorité Basse",
+    "mediumPriority": "Priorité Moyenne",
+    "highPriority": "Priorité Haute"
+  },
+  "currency": {
+    "amount": "{{amount}} CFA",
+    "perNight": "{{amount}} CFA / nuit"
+  },
+  "errors": {
+    "generic": "Erreur : {{message}}",
+    "fillAllFields": "Veuillez remplir tous les champs",
+    "validAmount": "Veuillez entrer un montant valide.",
+    "nameAddressRequired": "Nom et adresse requis"
+  },
+  "toast": {
+    "offline": "Vous êtes hors ligne.",
+    "online": "De retour en ligne !"
+  },
+  "categories": {
+    "maintenance": "Entretien",
+    "utilities": "Services publics",
+    "taxes": "Impôts",
+    "other": "Autre"
+  },
+  "rentalType": {
+    "longTerm": "Location Longue Durée",
+    "shortTerm": "Location Courte Durée (Airbnb)"
+  }
+}

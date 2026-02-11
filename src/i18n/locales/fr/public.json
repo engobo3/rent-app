@@ -1,0 +1,87 @@
+{
+  "home": {
+    "heroSubtitle": "Votre Chez-Vous au Bord de la Mer",
+    "viewUnits": "Voir les Logements Disponibles",
+    "comfortableLiving": "Un Cadre de Vie Confortable à Ekpe",
+    "comfortableDescription": "Situé dans le quartier paisible d'Ekpe, à quelques minutes de la plage et des marchés animés de Cotonou. Nos maisons de location sécurisées et bien entretenues offrent l'équilibre parfait entre tranquillité et commodité pour les familles et les professionnels.",
+    "secure": "Sécurisé",
+    "secureDesc": "Résidence fermée avec sécurité 24h/24 pour votre tranquillité.",
+    "nearBeach": "Près de la Plage",
+    "nearBeachDesc": "À quelques minutes du magnifique littoral atlantique.",
+    "reliablePower": "Électricité Fiable",
+    "reliablePowerDesc": "Groupe électrogène de secours et électricité stable pour rester connecté.",
+    "findHome": "Trouvez Votre Nouveau Chez-Vous",
+    "findHomeDesc": "Locations longue et courte durée disponibles. Parcourez nos logements et postulez en ligne aujourd'hui.",
+    "browseUnits": "Parcourir les Logements",
+    "location": "Ekpe, Bénin",
+    "locationDesc": "Un quartier en pleine croissance avec un accès facile à Cotonou, aux marchés locaux, aux écoles et au littoral. L'emplacement idéal pour un cadre de vie confortable et abordable.",
+    "contactUs": "Nous Contacter"
+  },
+  "header": {
+    "phone": "+229 90 00 00 00"
+  },
+  "footer": {
+    "contactUs": "Nous Contacter",
+    "companyName": "Xwegbe Vivi",
+    "address": "Ekpe, Commune de Sèmè-Podji",
+    "country": "Bénin",
+    "officeHours": "Heures de Bureau",
+    "monFri": "Lun - Ven : 8h00 - 18h00",
+    "saturday": "Samedi : 9h00 - 13h00",
+    "sunday": "Dimanche : Fermé",
+    "quickLinks": "Liens Rapides",
+    "payRent": "Payer le Loyer",
+    "maintenanceRequest": "Demande d'Entretien",
+    "about": "À Propos",
+    "aboutText": "Maisons de location sécurisées et abordables à Ekpe, Bénin. Options de location longue et courte durée disponibles.",
+    "copyright": "Xwegbe Vivi. Tous Droits Réservés.",
+    "betaVersion": "Version Bêta"
+  },
+  "login": {
+    "residentLogin": "Connexion Résident",
+    "createAccount": "Créer un Compte",
+    "signIn": "Se Connecter",
+    "signUp": "S'inscrire",
+    "email": "Adresse Email",
+    "password": "Mot de Passe",
+    "confirmPassword": "Confirmer le Mot de Passe",
+    "signingIn": "Connexion...",
+    "creatingAccount": "Création du compte...",
+    "tenantHint": "Si votre propriétaire vous a ajouté comme locataire, utilisez le même email qu'il a en dossier. Vous serez automatiquement connecté à votre logement.",
+    "passwordPlaceholder": "Entrez votre mot de passe",
+    "passwordSignupPlaceholder": "Au moins 6 caractères",
+    "confirmPlaceholder": "Re-entrez votre mot de passe",
+    "loggedIn": "Connecté !",
+    "accountCreated": "Compte créé ! Redirection...",
+    "noAccount": "Aucun compte trouvé. Inscrivez-vous d'abord ou vérifiez vos identifiants.",
+    "loginFailed": "Échec de la connexion : {{message}}",
+    "passwordsMismatch": "Les mots de passe ne correspondent pas.",
+    "passwordTooShort": "Le mot de passe doit comporter au moins 6 caractères.",
+    "emailExists": "Un compte avec cet email existe déjà. Essayez de vous connecter.",
+    "signupFailed": "Échec de l'inscription : {{message}}"
+  },
+  "apply": {
+    "title": "Demande de Location",
+    "fullName": "Nom Complet",
+    "email": "Adresse Email",
+    "phone": "Numéro de Téléphone",
+    "income": "Revenu Annuel (CFA)",
+    "desiredUnit": "Logement Souhaité",
+    "unitPlaceholder": "ex : 101",
+    "submitting": "Envoi...",
+    "submitApplication": "Soumettre la Demande",
+    "submitted": "Demande soumise avec succès !",
+    "submitFailed": "Échec de la soumission : {{message}}"
+  },
+  "listings": {
+    "title": "Logements Disponibles",
+    "loading": "Chargement...",
+    "noUnits": "Aucun logement disponible actuellement. Revenez bientôt !",
+    "noPhoto": "Pas de Photo",
+    "unit": "UNITÉ {{unit}}"
+  },
+  "accessDenied": {
+    "title": "Accès Refusé",
+    "noTenantRecord": "Aucun dossier de locataire trouvé pour {{email}}. Contactez votre propriétaire."
+  }
+}

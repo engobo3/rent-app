@@ -1,6 +1,5 @@
 
 import { createPaymentIntent } from './index';
-// @ts-ignore
 import Stripe from 'stripe';
 
 // Mock firebase-admin
@@ -20,7 +19,7 @@ jest.mock('stripe', () => {
 
 // Mock firebase-functions
 jest.mock('firebase-functions/v2/https', () => ({
-  onCall: (handler: any) => handler,
+  onCall: (handler: (req: unknown) => Promise<unknown>) => handler,
 }));
 
 describe('Cloud Functions', () => {
@@ -31,8 +30,7 @@ describe('Cloud Functions', () => {
   describe('createPaymentIntent', () => {
     it('should create a payment intent and return client secret', async () => {
       // Access the mock instance
-      // @ts-ignore
-      const stripeInstance = new Stripe('key', {});
+      const stripeInstance = new (Stripe as unknown as new (...args: unknown[]) => Stripe)('key', { apiVersion: '2025-12-15.clover' });
       const mockCreate = stripeInstance.paymentIntents.create as jest.Mock;
       mockCreate.mockResolvedValue({ client_secret: 'test_client_secret' });
 
@@ -43,7 +41,7 @@ describe('Cloud Functions', () => {
         },
       };
 
-      const result = await (createPaymentIntent as any)(request);
+      const result = await (createPaymentIntent as unknown as (req: unknown) => Promise<unknown>)(request);
 
       expect(mockCreate).toHaveBeenCalledTimes(1);
       expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({

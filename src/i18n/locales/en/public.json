@@ -1,0 +1,87 @@
+{
+  "home": {
+    "heroSubtitle": "Enjoy A Place With More Space",
+    "viewUnits": "View Available Units",
+    "comfortableLiving": "Comfortable Living in Ekpe",
+    "comfortableDescription": "Located in the peaceful neighborhood of Ekpe, just minutes from the beach and the vibrant markets of Cotonou. Our secure, well-maintained rental homes offer the perfect balance of tranquility and convenience for families and professionals.",
+    "secure": "Secure",
+    "secureDesc": "Gated compound with 24/7 security for your peace of mind.",
+    "nearBeach": "Near the Beach",
+    "nearBeachDesc": "Just a short drive from the beautiful Atlantic coastline.",
+    "reliablePower": "Reliable Power",
+    "reliablePowerDesc": "Backup generator and stable electricity to keep you connected.",
+    "findHome": "Find Your New Home",
+    "findHomeDesc": "Long-term and short-term rentals available. Browse our units and apply online today.",
+    "browseUnits": "Browse Units",
+    "location": "Ekpe, Benin",
+    "locationDesc": "A growing neighborhood with easy access to Cotonou, local markets, schools, and the coastline. The ideal location for comfortable, affordable living.",
+    "contactUs": "Contact Us"
+  },
+  "header": {
+    "phone": "+229 90 00 00 00"
+  },
+  "footer": {
+    "contactUs": "Contact Us",
+    "companyName": "Xwegbe Vivi",
+    "address": "Ekpe, Commune de Seme-Podji",
+    "country": "Benin",
+    "officeHours": "Office Hours",
+    "monFri": "Mon - Fri: 8:00 AM - 6:00 PM",
+    "saturday": "Saturday: 9:00 AM - 1:00 PM",
+    "sunday": "Sunday: Closed",
+    "quickLinks": "Quick Links",
+    "payRent": "Pay Rent",
+    "maintenanceRequest": "Maintenance Request",
+    "about": "About",
+    "aboutText": "Secure, affordable rental homes in Ekpe, Benin. Long-term and short-term options available.",
+    "copyright": "Xwegbe Vivi. All Rights Reserved.",
+    "betaVersion": "Beta Version"
+  },
+  "login": {
+    "residentLogin": "Resident Login",
+    "createAccount": "Create Account",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "email": "Email Address",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "signingIn": "Signing In...",
+    "creatingAccount": "Creating Account...",
+    "tenantHint": "If your landlord has added you as a tenant, use the same email they have on file. You'll be automatically connected to your unit.",
+    "passwordPlaceholder": "Enter your password",
+    "passwordSignupPlaceholder": "At least 6 characters",
+    "confirmPlaceholder": "Re-enter your password",
+    "loggedIn": "Logged in!",
+    "accountCreated": "Account created! Redirecting...",
+    "noAccount": "No account found. Sign up first or check your credentials.",
+    "loginFailed": "Login failed: {{message}}",
+    "passwordsMismatch": "Passwords do not match.",
+    "passwordTooShort": "Password must be at least 6 characters.",
+    "emailExists": "An account with this email already exists. Try signing in.",
+    "signupFailed": "Signup failed: {{message}}"
+  },
+  "apply": {
+    "title": "Rental Application",
+    "fullName": "Full Name",
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "income": "Annual Income (CFA)",
+    "desiredUnit": "Desired Unit",
+    "unitPlaceholder": "e.g. 101",
+    "submitting": "Submitting...",
+    "submitApplication": "Submit Application",
+    "submitted": "Application submitted successfully!",
+    "submitFailed": "Submission failed: {{message}}"
+  },
+  "listings": {
+    "title": "Available Floor Plans",
+    "loading": "Loading...",
+    "noUnits": "No units currently available. Please check back later!",
+    "noPhoto": "No Photo",
+    "unit": "UNIT {{unit}}"
+  },
+  "accessDenied": {
+    "title": "Access Denied",
+    "noTenantRecord": "No tenant record found for {{email}}. Please contact your landlord."
+  }
+}
