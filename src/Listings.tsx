@@ -76,7 +76,7 @@ export function Listings({ limit }: ListingsProps) {
                         <p style={{ color: '#666', fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)', marginBottom: 'clamp(20px, 4vw, 25px)', lineHeight: '1.6' }}>{listing.description}</p>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f4f4f4', paddingTop: 'clamp(15px, 3vw, 20px)', flexWrap: 'wrap', gap: '12px' }}>
                             <span style={{ fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)', color: '#999', fontWeight: 600 }}>{t('listings.unit', { unit: listing.unit })}</span>
-                            <Link to={`/apply?unit=${listing.unit}&listingId=${listing.id}`} className="btn-primary" style={{ textDecoration: 'none', fontSize: 'clamp(0.8rem, 2.5vw, 0.85rem)', padding: 'clamp(8px, 2vw, 10px) clamp(16px, 3vw, 20px)' }}>{t('common:nav.applyNow')}</Link>
+                            <Link to={`/apply?unit=${listing.unit}&listingId=${listing.id}&ownerId=${listing.ownerId}&propertyId=${listing.propertyId || ''}`} className="btn-primary" style={{ textDecoration: 'none', fontSize: 'clamp(0.8rem, 2.5vw, 0.85rem)', padding: 'clamp(8px, 2vw, 10px) clamp(16px, 3vw, 20px)' }}>{t('common:nav.applyNow')}</Link>
                         </div>
                     </div>
                 </div>

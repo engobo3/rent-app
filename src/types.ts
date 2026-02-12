@@ -30,7 +30,8 @@ export interface Tenant {
 export interface RentalApplication {
     id: string;
     ownerId: string;
-    propertyId?: string; // <--- NEW
+    propertyId?: string;
+    listingId?: string;
     name: string;
     email: string;
     phone: string;

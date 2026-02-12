@@ -5,7 +5,8 @@
   "tabs": {
     "overview": "Overview",
     "properties": "Properties",
-    "landlords": "Landlords"
+    "landlords": "Landlords",
+    "applications": "Applications"
   },
   "overview": {
     "totalRevenue": "Total Revenue",
@@ -27,6 +28,20 @@
     "joined": "Joined",
     "noLandlords": "No landlords found.",
     "na": "N/A"
+  },
+  "applications": {
+    "title": "All Applications",
+    "noApplications": "No applications found.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approved": "Application approved!",
+    "rejected": "Application rejected.",
+    "approveConfirm": "Approve {{name}} for {{unit}}?",
+    "rejectConfirm": "Reject and delete this application?",
+    "unit": "Unit: {{unit}}",
+    "income": "Income: {{amount}} CFA",
+    "status": "Status: {{status}}",
+    "unassigned": "Unassigned"
   },
   "errors": {
     "fetchFailed": "Error fetching admin data: {{message}}"

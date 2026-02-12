@@ -10,6 +10,10 @@ export function PublicApply() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
+    const ownerId = searchParams.get('ownerId') || '';
+    const propertyId = searchParams.get('propertyId') || '';
+    const listingId = searchParams.get('listingId') || '';
+
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
@@ -22,26 +26,10 @@ export function PublicApply() {
         setIsSubmitting(true);
 
         try {
-            // In a real app, 'ownerId' would be dynamic based on the listing.
-            // For now, we assume a single landlord or handle it via admin logic.
-            // We'll write to 'applications' and let any landlord see it (or filter later).
-            // Since we track 'ownerId' in application, we need to know WHO owns the unit.
-            // Ideally 'listingId' helps us look that up.
-
-            // For MVP simplification: We'll add a dummy ownerId or fetch it?
-            // We'll require the listingId param.
-            // Actually, let's just make it "Pending" and allow ANY landlord to claim/see it?
-            // Or better: pass ownerId in URL or fetch listing.
-            // Let's assume searchParams has `ownerId` too or we just save it without ownerId first?
-            // Existing app relies on 'where("ownerId", "==", user.uid)'. So without ownerId, no one sees it.
-            // We need to fetch the listing to get the ownerId.
-
-            // MVP: Just save it. We'll fix the owner visibility later or assume user passes it manually (unlikely).
-            // Actually, let's fetch the listing if listingId exists.
-
             await addDoc(collection(db, "applications"), {
-                // ownerId: ??? We need this.
-                // Hack: Save the listingId, and we'll update Dashboards to Query ALL applications or specifically fetched ones.
+                ownerId: ownerId || null,
+                propertyId: propertyId || null,
+                listingId: listingId || null,
                 name, email, phone, income: parseFloat(income), desiredUnit: unit, status: 'pending', date: new Date().toLocaleDateString()
             });
 

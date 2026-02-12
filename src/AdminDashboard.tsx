@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { db } from './firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { type User } from 'firebase/auth';
-import type { Property, UserProfile, Tenant } from './types';
+import type { Property, UserProfile, Tenant, RentalApplication } from './types';
 import toast, { Toaster } from 'react-hot-toast';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
@@ -24,7 +24,8 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
     });
     const [properties, setProperties] = useState<Property[]>([]);
     const [landlords, setLandlords] = useState<UserProfile[]>([]);
-    const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'landlords'>('overview');
+    const [applications, setApplications] = useState<RentalApplication[]>([]);
+    const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'landlords' | 'applications'>('overview');
 
     useEffect(() => {
         const fetchGlobalData = async () => {
@@ -44,6 +45,11 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
                 const usersList = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as unknown as UserProfile[];
                 const landlordsList = usersList.filter(u => u.role === 'landlord');
                 setLandlords(landlordsList);
+
+                // 4. Fetch Applications
+                const appsSnap = await getDocs(collection(db, 'applications'));
+                const appsList = appsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as unknown as RentalApplication[];
+                setApplications(appsList);
 
                 // Calculate Stats
                 const totalRev = tenantsList.reduce((acc, t) => {
@@ -97,7 +103,7 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
 
                 {/* TABS */}
                 <div style={{ display: 'flex', gap: 'clamp(12px, 3vw, 20px)', marginBottom: 'clamp(20px, 4vw, 30px)', borderBottom: '1px solid #ddd', paddingBottom: '10px', overflowX: 'auto' }}>
-                    {['overview', 'properties', 'landlords'].map(tab => (
+                    {['overview', 'properties', 'landlords', 'applications'].map(tab => (
                         <div
                             key={tab}
                             onClick={() => setActiveTab(tab as typeof activeTab)}
@@ -203,6 +209,77 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
                         </div>
 
                         {landlords.length === 0 && <p style={{ padding: '20px', textAlign: 'center', fontSize: 'clamp(0.85rem, 2.5vw, 1rem)' }}>{t('landlords.noLandlords')}</p>}
+                    </div>
+                )}
+
+                {/* APPLICATIONS TAB */}
+                {activeTab === 'applications' && (
+                    <div>
+                        <h3 style={{ fontSize: 'clamp(1rem, 3vw, 1.2rem)', marginBottom: 'clamp(16px, 3vw, 20px)' }}>{t('applications.title')}</h3>
+                        <div style={{ display: 'grid', gap: 'clamp(12px, 2.5vw, 15px)' }}>
+                            {applications.map(app => (
+                                <div key={app.id} style={{ background: 'white', padding: 'clamp(16px, 3vw, 20px)', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '5px solid #6f42c1' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                                        <div>
+                                            <div style={{ fontWeight: 600, fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)' }}>{app.name}</div>
+                                            <div style={{ fontSize: 'clamp(0.8rem, 2vw, 0.9rem)', color: '#666' }}>{t('applications.unit', { unit: app.desiredUnit })}</div>
+                                        </div>
+                                        <span style={{
+                                            fontSize: 'clamp(0.7rem, 2vw, 0.8rem)',
+                                            background: app.status === 'pending' ? '#fff3cd' : app.status === 'approved' ? '#d4edda' : '#f8d7da',
+                                            color: app.status === 'pending' ? '#856404' : app.status === 'approved' ? '#155724' : '#721c24',
+                                            padding: '4px 10px',
+                                            borderRadius: '12px',
+                                            fontWeight: 600
+                                        }}>
+                                            {app.status}
+                                        </span>
+                                    </div>
+                                    <div style={{ fontSize: 'clamp(0.8rem, 2vw, 0.9rem)', color: '#666', marginBottom: '8px' }}>
+                                        {app.email} | {app.phone}
+                                    </div>
+                                    <div style={{ fontSize: 'clamp(0.8rem, 2vw, 0.9rem)', color: '#666', marginBottom: '12px' }}>
+                                        {t('applications.income', { amount: app.income?.toLocaleString() || '0' })}
+                                        {!app.ownerId && <span style={{ marginLeft: '10px', color: '#dc3545', fontWeight: 600 }}>({t('applications.unassigned')})</span>}
+                                    </div>
+                                    {app.status === 'pending' && (
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <button
+                                                onClick={async () => {
+                                                    if (!window.confirm(t('applications.approveConfirm', { name: app.name, unit: app.desiredUnit }))) return;
+                                                    try {
+                                                        await deleteDoc(doc(db, 'applications', app.id));
+                                                        setApplications(prev => prev.filter(a => a.id !== app.id));
+                                                        toast.success(t('applications.approved'));
+                                                    } catch (err) {
+                                                        toast.error(t('errors.fetchFailed', { message: (err as Error).message }));
+                                                    }
+                                                }}
+                                                style={{ background: '#28a745', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', flex: 1, minHeight: '44px' }}
+                                            >
+                                                {t('applications.approve')}
+                                            </button>
+                                            <button
+                                                onClick={async () => {
+                                                    if (!window.confirm(t('applications.rejectConfirm'))) return;
+                                                    try {
+                                                        await deleteDoc(doc(db, 'applications', app.id));
+                                                        setApplications(prev => prev.filter(a => a.id !== app.id));
+                                                        toast.success(t('applications.rejected'));
+                                                    } catch (err) {
+                                                        toast.error(t('errors.fetchFailed', { message: (err as Error).message }));
+                                                    }
+                                                }}
+                                                style={{ background: '#dc3545', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', flex: 1, minHeight: '44px' }}
+                                            >
+                                                {t('applications.reject')}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                            {applications.length === 0 && <p style={{ textAlign: 'center', color: '#888', fontSize: 'clamp(0.85rem, 2.5vw, 1rem)' }}>{t('applications.noApplications')}</p>}
+                        </div>
                     </div>
                 )}
 

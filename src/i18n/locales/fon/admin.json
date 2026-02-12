@@ -5,7 +5,8 @@
   "tabs": {
     "overview": "Kpɔ́n Bǐ",
     "properties": "Xwé Lɛ",
-    "landlords": "Xwétɔ́ Lɛ"
+    "landlords": "Xwétɔ́ Lɛ",
+    "applications": "Candidatures"
   },
   "overview": {
     "totalRevenue": "Akwɛ Bǐ",
@@ -27,6 +28,20 @@
     "joined": "Wlǎn Nyikɔ",
     "noLandlords": "Xwétɔ́ ɖě ɖè ǎ.",
     "na": "N/A"
+  },
+  "applications": {
+    "title": "Candidature Bǐ",
+    "noApplications": "Candidature ɖě ɖè ǎ.",
+    "approve": "Yí Gbè",
+    "reject": "Gbɛ́",
+    "approved": "Candidature yí gbè !",
+    "rejected": "Candidature gbɛ́.",
+    "approveConfirm": "Yí gbè nú {{name}} nú {{unit}} ?",
+    "rejectConfirm": "Gbɛ́ bo ɖè candidature élɔ síìn ?",
+    "unit": "Unité : {{unit}}",
+    "income": "Akwɛ : {{amount}} CFA",
+    "status": "Ninɔmɛ : {{status}}",
+    "unassigned": "È sɔ́ ɖó ǎ"
   },
   "errors": {
     "fetchFailed": "Afɔɖóte admin : {{message}}"

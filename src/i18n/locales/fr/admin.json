@@ -5,7 +5,8 @@
   "tabs": {
     "overview": "Vue d'ensemble",
     "properties": "Propriétés",
-    "landlords": "Propriétaires"
+    "landlords": "Propriétaires",
+    "applications": "Candidatures"
   },
   "overview": {
     "totalRevenue": "Revenu Total",
@@ -27,6 +28,20 @@
     "joined": "Inscription",
     "noLandlords": "Aucun propriétaire trouvé.",
     "na": "N/A"
+  },
+  "applications": {
+    "title": "Toutes les Candidatures",
+    "noApplications": "Aucune candidature trouvée.",
+    "approve": "Approuver",
+    "reject": "Rejeter",
+    "approved": "Candidature approuvée !",
+    "rejected": "Candidature rejetée.",
+    "approveConfirm": "Approuver {{name}} pour {{unit}} ?",
+    "rejectConfirm": "Rejeter et supprimer cette candidature ?",
+    "unit": "Unité : {{unit}}",
+    "income": "Revenu : {{amount}} CFA",
+    "status": "Statut : {{status}}",
+    "unassigned": "Non assignée"
   },
   "errors": {
     "fetchFailed": "Erreur lors de la récupération des données admin : {{message}}"

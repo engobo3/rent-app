@@ -322,6 +322,7 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
         try {
             await addDoc(collection(db, "applications"), {
                 ownerId: user.uid,
+                propertyId: selectedPropertyId !== 'all' ? selectedPropertyId : null,
                 name: appName,
                 email: appEmail,
                 phone: appPhone,
@@ -392,6 +393,7 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
         try {
             await addDoc(collection(db, "listings"), {
                 ownerId: user.uid,
+                propertyId: selectedPropertyId !== 'all' ? selectedPropertyId : null,
                 title: listingTitle,
                 description: listingDesc,
                 rent: parseFloat(listingRent),
