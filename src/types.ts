@@ -76,6 +76,16 @@ export interface Listing {
     dateAdded: string;
 }
 
+export interface BillingHistoryEntry {
+    id: string;
+    billingMonth: string;        // "YYYY-MM"
+    ownerId?: string;            // present on manual records, may be missing on auto
+    date: string;                // ISO string
+    tenantsCharged: number;
+    totalRentAdded: number;
+    triggeredBy: 'auto' | 'manual';
+}
+
 // ─── Role-Based User Profiles ────────────────────────────────────────────────
 
 export type UserRole = 'tenant' | 'landlord' | 'admin';

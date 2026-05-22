@@ -95,4 +95,44 @@ describe('PaymentModal', () => {
       expect(defaultProps.onSuccess).not.toHaveBeenCalled();
     });
   });
+
+  it('disables pay button during processing', async () => {
+    // Make confirmPayment hang forever to test processing state
+    mockStripe.confirmPayment.mockImplementation(() => new Promise(() => {}));
+
+    render(<PaymentModal {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Pay 5000 CFA')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Pay 5000 CFA'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Processing...')).toBeInTheDocument();
+      expect(screen.getByText('Processing...')).toBeDisabled();
+    });
+  });
+
+  it('shows loading state when client secret not yet loaded', () => {
+    // Make the cloud function hang forever
+    (functions.httpsCallable as ReturnType<typeof vi.fn>).mockReturnValue(
+      () => new Promise(() => {})
+    );
+
+    render(<PaymentModal {...defaultProps} />);
+
+    expect(screen.getByText('Loading secure payment...')).toBeInTheDocument();
+  });
+
+  it('renders cancel button and calls onCancel', async () => {
+    render(<PaymentModal {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Pay 5000 CFA')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Cancel'));
+    expect(defaultProps.onCancel).toHaveBeenCalled();
+  });
 });

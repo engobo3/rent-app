@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import './App.css';
-import type { Property, Tenant, Payment, RentalApplication, Expense, RepairRequest, Listing } from './types';
+import type { Property, Tenant, Payment, RentalApplication, Expense, RepairRequest, Listing, BillingHistoryEntry } from './types';
 import { db, storage, functions } from './firebase';
 import { type User } from 'firebase/auth';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -11,8 +11,9 @@ import { PaymentModal } from './PaymentModal';
 import { MobileMoneyModal } from './MobileMoneyModal';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, writeBatch, arrayUnion } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, writeBatch, arrayUnion, arrayRemove, getDocs } from 'firebase/firestore';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { FinancialReports } from './FinancialReports';
 
 interface LandlordDashboardProps {
     user: User;
@@ -27,7 +28,8 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
     const [repairs, setRepairs] = useState<RepairRequest[]>([]);
     const [properties, setProperties] = useState<Property[]>([]); // NEW
     const [selectedPropertyId, setSelectedPropertyId] = useState<string>('all'); // NEW
-    const [activeTab, setActiveTab] = useState<'tenants' | 'applications' | 'dashboard' | 'expenses' | 'repairs' | 'listings' | 'properties'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'tenants' | 'applications' | 'dashboard' | 'expenses' | 'repairs' | 'listings' | 'properties' | 'reports'>('dashboard');
+    const [billingHistory, setBillingHistory] = useState<BillingHistoryEntry[]>([]);
 
     const [paymentAmount, setPaymentAmount] = useState<string>("");
     const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
@@ -85,11 +87,11 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
     const [isRepairFormOpen, setIsRepairFormOpen] = useState(false);
     const [isAddingRepair, setIsAddingRepair] = useState(false);
 
-    // Form State (Properties)
-    const [propName, setPropName] = useState("");
-    const [propAddress, setPropAddress] = useState("");
-    const [isAddingProp, setIsAddingProp] = useState(false);
-    const [isPropFormOpen, setIsPropFormOpen] = useState(false);
+    // Properties are managed by admin — landlord view is read-only
+
+    // Approval Modal State
+    const [approvalApp, setApprovalApp] = useState<RentalApplication | null>(null);
+    const [approvalRent, setApprovalRent] = useState("");
 
     // Lease/Photo Upload State
     const [uploadingLease, setUploadingLease] = useState(false);
@@ -143,8 +145,15 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
         const unsubProps = onSnapshot(qProps, (snapshot) => {
             const propsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
             setProperties(propsList);
-            // Auto-select first property if none selected and properties exist? 
+            // Auto-select first property if none selected and properties exist?
             // Better to keep 'all' as default for overview.
+        });
+
+        // Fetch Billing History
+        const qBilling = query(collection(db, "billingHistory"), where("ownerId", "==", user.uid));
+        const unsubBilling = onSnapshot(qBilling, (snapshot) => {
+            const billingList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BillingHistoryEntry));
+            setBillingHistory(billingList);
         });
 
         return () => {
@@ -154,6 +163,7 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
             unsubExpenses();
             unsubRepairs();
             unsubProps();
+            unsubBilling();
         };
     }, [user]);
 
@@ -189,16 +199,54 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
         if (!window.confirm(t('monthStart.confirm'))) return;
         setIsStartingMonth(true);
         try {
+            // Double-billing protection: check if this month was already billed
+            const now = new Date();
+            const billingMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const existingSnap = await getDocs(query(
+                collection(db, "billingHistory"),
+                where("billingMonth", "==", billingMonth),
+                where("ownerId", "==", user.uid)
+            ));
+            if (!existingSnap.empty) {
+                toast.error(t('monthStart.alreadyBilled'));
+                return;
+            }
+
+            const longTermTenants = tenants.filter(t => t.type !== 'short-term');
             const batch = writeBatch(db);
-            tenants.forEach((tenant) => {
-                batch.update(doc(db, "tenants", tenant.id), { balance: tenant.balance + tenant.monthlyRent });
+            let totalRentAdded = 0;
+            longTermTenants.forEach((tenant) => {
+                if (tenant.monthlyRent > 0) {
+                    batch.update(doc(db, "tenants", tenant.id), { balance: tenant.balance + tenant.monthlyRent });
+                    totalRentAdded += tenant.monthlyRent;
+                }
             });
             await batch.commit();
+
+            // Record billing in history
+            await addDoc(collection(db, "billingHistory"), {
+                billingMonth,
+                ownerId: user.uid,
+                date: now.toISOString(),
+                tenantsCharged: longTermTenants.length,
+                totalRentAdded,
+                triggeredBy: 'manual',
+            });
+
             toast.success(t('monthStart.success'));
         } catch (error) {
             toast.error(t('monthStart.failed', { message: (error as Error).message }));
         } finally {
             setIsStartingMonth(false);
+        }
+    };
+
+    const updateListingAvailability = async (unit: string, available: boolean, propertyId?: string | null) => {
+        const matchingListings = listings.filter(l =>
+            l.unit === unit && (propertyId ? l.propertyId === propertyId : true)
+        );
+        for (const listing of matchingListings) {
+            await updateDoc(doc(db, "listings", listing.id), { available });
         }
     };
 
@@ -211,6 +259,7 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
 
             await addDoc(collection(db, "tenants"), {
                 ownerId: user.uid,
+                propertyId: selectedPropertyId !== 'all' ? selectedPropertyId : null,
                 name: newName,
                 email: newEmail,
                 unit: newUnit,
@@ -220,9 +269,10 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
                 type: newType,
                 dailyRate: dailyVal,
                 status: 'occupied', // Default
-                balance: 0,
+                balance: rentVal,
                 payments: []
             });
+            await updateListingAvailability(newUnit, false, selectedPropertyId !== 'all' ? selectedPropertyId : null);
             toast.success(t('tenants.added'));
             setIsFormOpen(false);
             setNewName(""); setNewEmail(""); setNewUnit(""); setNewPhone(""); setNewRent(""); setNewDailyRate("");
@@ -279,6 +329,7 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
             toast.error(t('common:errors.validAmount'));
             return;
         }
+        if (!window.confirm(t('payments.cashConfirm', { amount: amount.toLocaleString() }))) return;
         const tenant = tenants.find(t => t.id === tenantId);
         if (!tenant) return;
 
@@ -313,6 +364,10 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
     // --- APPLICATION ACTIONS ---
     const handleAddApplication = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (selectedPropertyId === 'all') {
+            toast.error(t('applications.selectPropertyFirst'));
+            return;
+        }
         if (!appName || !appEmail || !appPhone || !appIncome || !appUnit) {
             toast.error(t('common:errors.fillAllFields'));
             return;
@@ -322,7 +377,7 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
         try {
             await addDoc(collection(db, "applications"), {
                 ownerId: user.uid,
-                propertyId: selectedPropertyId !== 'all' ? selectedPropertyId : null,
+                propertyId: selectedPropertyId,
                 name: appName,
                 email: appEmail,
                 phone: appPhone,
@@ -340,37 +395,41 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
         }
     };
 
-    const approveApplication = async (app: RentalApplication) => {
-        if (!window.confirm(t('applications.approveConfirm', { name: app.name, unit: app.desiredUnit }))) return;
+    const confirmApproval = async () => {
+        if (!approvalApp) return;
+        const rent = parseFloat(approvalRent);
+        if (isNaN(rent) || rent <= 0) {
+            toast.error(t('applications.rentRequired'));
+            return;
+        }
 
         try {
             const batch = writeBatch(db);
 
             // 1. Create Tenant
             const newTenantRef = doc(collection(db, "tenants"));
-            const tenantData = {
+            batch.set(newTenantRef, {
                 ownerId: user.uid,
-                propertyId: app.propertyId || null, // Link to property if available
-                name: app.name,
-                email: app.email, // CRITICAL: Required for login linking
-                unit: app.desiredUnit,
-                phone: app.phone,
-                monthlyRent: 0, // Landlord needs to set this later, or we could prompt for it
-
-                // Defaults for new tenant
+                propertyId: approvalApp.propertyId || null,
+                name: approvalApp.name,
+                email: approvalApp.email,
+                unit: approvalApp.desiredUnit,
+                phone: approvalApp.phone,
+                monthlyRent: rent,
                 type: 'long-term',
                 status: 'occupied',
-                balance: 0,
+                balance: rent,
                 payments: []
-            };
-            batch.set(newTenantRef, tenantData);
+            });
 
             // 2. Delete Application
-            const appRef = doc(db, "applications", app.id);
-            batch.delete(appRef);
+            batch.delete(doc(db, "applications", approvalApp.id));
 
             await batch.commit();
-            toast.success(t('applications.nowTenant', { name: app.name }));
+            await updateListingAvailability(approvalApp.desiredUnit, false, approvalApp.propertyId);
+            toast.success(t('applications.nowTenant', { name: approvalApp.name }));
+            setApprovalApp(null);
+            setApprovalRent("");
         } catch (err) {
             toast.error(t('applications.approvalFailed', { message: (err as Error).message }));
         }
@@ -525,51 +584,57 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
         }
     };
 
-    // --- PROPERTY ACTIONS ---
-    const handleAddProperty = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!propName || !propAddress) {
-            toast.error(t('common:errors.nameAddressRequired'));
-            return;
-        }
-        setIsAddingProp(true);
-        try {
-            await addDoc(collection(db, "properties"), {
-                ownerId: user.uid,
-                name: propName,
-                address: propAddress,
-                amenities: [],
-                image: ''
-            });
-            setPropName(""); setPropAddress("");
-            setIsPropFormOpen(false);
-            toast.success(t('properties.added'));
-        } catch (e) {
-            toast.error(t('common:errors.generic', { message: (e as Error).message }));
-        } finally {
-            setIsAddingProp(false);
-        }
-    };
-
-    const handleDeleteProperty = async (id: string) => {
-        if (!window.confirm(t('properties.deleteConfirm'))) return;
-        try {
-            await deleteDoc(doc(db, "properties", id));
-            toast.success(t('properties.deleted'));
-            if (selectedPropertyId === id) setSelectedPropertyId('all');
-        } catch (e) {
-            toast.error(t('common:errors.generic', { message: (e as Error).message }));
-        }
-    };
-
     const handleDeleteTenant = async (id: string) => {
         if (!window.confirm(t('tenants.deleteConfirm'))) return;
+        const tenant = tenants.find(t => t.id === id);
         try {
             await deleteDoc(doc(db, "tenants", id));
+            if (tenant) {
+                await updateListingAvailability(tenant.unit, true, tenant.propertyId);
+            }
             setViewingTenant(null);
             toast.success(t('tenants.deleted'));
         } catch (error) {
             toast.error(t('common:errors.generic', { message: (error as Error).message }));
+        }
+    };
+
+    const handleDeletePayment = async (tenantId: string, payment: Payment) => {
+        if (!window.confirm(t('payments.deleteConfirm'))) return;
+        const tenant = tenants.find(t => t.id === tenantId);
+        if (!tenant) return;
+
+        try {
+            await updateDoc(doc(db, "tenants", tenantId), {
+                balance: tenant.balance + payment.amount,
+                payments: arrayRemove({ id: payment.id, amount: payment.amount, date: payment.date, method: payment.method })
+            });
+            setViewingTenant(prev => prev ? {
+                ...prev,
+                balance: prev.balance + payment.amount,
+                payments: prev.payments.filter(p => p.id !== payment.id)
+            } : null);
+            toast.success(t('payments.paymentDeleted'));
+        } catch (error) {
+            toast.error(t('payments.deleteFailed', { message: (error as Error).message }));
+        }
+    };
+
+    const handleUndoBilling = async (entry: BillingHistoryEntry) => {
+        if (!window.confirm(t('reports.undoConfirm'))) return;
+        try {
+            const longTermTenants = tenants.filter(t => t.type !== 'short-term');
+            const batch = writeBatch(db);
+            longTermTenants.forEach((tenant) => {
+                if (tenant.monthlyRent > 0) {
+                    batch.update(doc(db, "tenants", tenant.id), { balance: tenant.balance - tenant.monthlyRent });
+                }
+            });
+            batch.delete(doc(db, "billingHistory", entry.id));
+            await batch.commit();
+            toast.success(t('reports.undoSuccess'));
+        } catch (error) {
+            toast.error(t('reports.undoFailed', { message: (error as Error).message }));
         }
     };
 
@@ -757,7 +822,7 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
             <div className="container" style={{ maxWidth: '1200px', margin: 'clamp(20px, 5vw, 40px) auto', padding: '0 clamp(16px, 3vw, 20px)' }}>
                 {/* TABS */}
                 <div className="tabs-container" style={{ marginBottom: 'clamp(20px, 4vw, 30px)', borderBottom: '2px solid #eee', overflowX: 'auto' }}>
-                    {['dashboard', 'properties', 'tenants', 'applications', 'listings', 'expenses', 'repairs'].map((tab) => (
+                    {['dashboard', 'properties', 'tenants', 'applications', 'listings', 'expenses', 'repairs', 'reports'].map((tab) => (
                         <div
                             key={tab}
                             className={`tab ${activeTab === tab ? 'active' : ''}`}
@@ -797,39 +862,16 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
                     </div>
                 )}
 
-                {/* PROPERTIES TAB CONTENT */}
+                {/* PROPERTIES TAB CONTENT (read-only — admin manages properties) */}
                 {activeTab === 'properties' && (
                     <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h2>{t('properties.title')}</h2>
-                            <button className="btn-primary" onClick={() => setIsPropFormOpen(true)}>{t('properties.addProperty')}</button>
-                        </div>
-
-                        {isPropFormOpen && (
-                            <div className="modal-overlay">
-                                <div className="modal-content">
-                                    <h3>{t('properties.addPropertyTitle')}</h3>
-                                    <form onSubmit={handleAddProperty}>
-                                        <input placeholder={t('properties.namePlaceholder')} value={propName} onChange={e => setPropName(e.target.value)} required />
-                                        <input placeholder={t('properties.addressPlaceholder')} value={propAddress} onChange={e => setPropAddress(e.target.value)} required />
-                                        <div className="modal-actions">
-                                            <button type="button" onClick={() => setIsPropFormOpen(false)}>{t('common:buttons.cancel')}</button>
-                                            <button type="submit" className="btn-primary" disabled={isAddingProp}>{isAddingProp ? t('properties.adding') : t('properties.addProperty')}</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        )}
-
+                        <h2>{t('properties.title')}</h2>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
                             {properties.map(p => (
                                 <div key={p.id} style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
                                     <h3 style={{ margin: '0 0 10px 0' }}>{p.name}</h3>
                                     <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '15px' }}>{p.address}</p>
-                                    <div style={{ display: 'flex', gap: '10px' }}>
-                                        <button onClick={() => { setSelectedPropertyId(p.id); setActiveTab('dashboard'); }} style={{ flex: 1, padding: '8px', cursor: 'pointer', background: '#e0e7ff', color: '#4338ca', border: 'none', borderRadius: '4px' }}>{t('common:buttons.manage')}</button>
-                                        <button onClick={() => handleDeleteProperty(p.id)} style={{ padding: '8px', cursor: 'pointer', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px' }}>{t('common:buttons.delete')}</button>
-                                    </div>
+                                    <button onClick={() => { setSelectedPropertyId(p.id); setActiveTab('dashboard'); }} style={{ width: '100%', padding: '8px', cursor: 'pointer', background: '#e0e7ff', color: '#4338ca', border: 'none', borderRadius: '4px' }}>{t('common:buttons.manage')}</button>
                                 </div>
                             ))}
                             {properties.length === 0 && <p style={{ color: '#888' }}>{t('properties.noProperties')}</p>}
@@ -1118,17 +1160,21 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
 
                         <div className="tenant-list">
                             {filteredApps.length === 0 && <p style={{ textAlign: 'center', color: '#666' }}>{t('applications.noApplications')}</p>}
-                            {filteredApps.map(app => (
-                                <div key={app.id} className="tenant-card" style={{ borderLeft: '5px solid #6f42c1' }}>
-                                    <h3>{app.name} <small>({app.desiredUnit})</small></h3>
-                                    <p>📞 {app.phone} | ✉️ {app.email}</p>
-                                    <p>{t('applications.income', { amount: app.income.toLocaleString() })}</p>
-                                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                                        <button onClick={() => approveApplication(app)} style={{ background: '#28a745', flex: 1 }}>{t('applications.approveAndConvert')}</button>
-                                        <button onClick={() => rejectApplication(app.id)} style={{ background: '#dc3545', flex: 1 }}>{t('applications.reject')}</button>
+                            {filteredApps.map(app => {
+                                const prop = properties.find(p => p.id === app.propertyId);
+                                return (
+                                    <div key={app.id} className="tenant-card" style={{ borderLeft: '5px solid #6f42c1' }}>
+                                        <h3>{app.name} <small>({app.desiredUnit})</small></h3>
+                                        {prop && <p style={{ fontSize: '0.85rem', color: '#4338ca', fontWeight: 600 }}>{t('applications.propertyLabel', { name: prop.name })}</p>}
+                                        <p>📞 {app.phone} | ✉️ {app.email}</p>
+                                        <p>{t('applications.income', { amount: app.income.toLocaleString() })}</p>
+                                        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                            <button onClick={() => { setApprovalApp(app); setApprovalRent(""); }} style={{ background: '#28a745', flex: 1 }}>{t('applications.approveAndConvert')}</button>
+                                            <button onClick={() => rejectApplication(app.id)} style={{ background: '#dc3545', flex: 1 }}>{t('applications.reject')}</button>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 ) : activeTab === 'listings' ? (
@@ -1275,6 +1321,15 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
                     </div>
                 )}
 
+                {activeTab === 'reports' && (
+                    <FinancialReports
+                        tenants={filteredTenants}
+                        expenses={filteredExpenses}
+                        billingHistory={billingHistory}
+                        onUndoBilling={handleUndoBilling}
+                    />
+                )}
+
                 {viewingTenant && (
                     <div className="modal-overlay" onClick={() => setViewingTenant(null)}>
                         <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -1305,6 +1360,12 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
                                                 style={{ padding: '5px 10px', fontSize: '0.8rem', background: '#28a745', marginLeft: '5px' }}
                                             >
                                                 📧 {isSendingEmail ? t('payments.sending') : t('payments.email')}
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeletePayment(viewingTenant.id, p)}
+                                                style={{ padding: '5px 10px', fontSize: '0.8rem', background: '#dc3545', marginLeft: '5px' }}
+                                            >
+                                                {t('payments.delete')}
                                             </button>
                                         </li>
                                     ))}
@@ -1367,6 +1428,40 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
                             >
                                 {t('tenants.deleteTenant')}
                             </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* APPROVAL MODAL */}
+                {approvalApp && (
+                    <div className="modal-overlay" onClick={() => setApprovalApp(null)}>
+                        <div className="modal-content" onClick={e => e.stopPropagation()}>
+                            <h3>{t('applications.approveTitle')}</h3>
+                            <p><b>{approvalApp.name}</b> — {approvalApp.desiredUnit}</p>
+                            {approvalApp.propertyId && (() => {
+                                const prop = properties.find(p => p.id === approvalApp.propertyId);
+                                return prop ? <p style={{ color: '#4338ca', fontWeight: 600 }}>{t('applications.propertyLabel', { name: prop.name })}</p> : null;
+                            })()}
+                            <p style={{ color: '#666', fontSize: '0.9rem' }}>{approvalApp.email} | {approvalApp.phone}</p>
+
+                            <div className="form-group" style={{ marginTop: '20px' }}>
+                                <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>{t('applications.enterRent')}</label>
+                                <input
+                                    type="number"
+                                    placeholder={t('applications.rentPlaceholder')}
+                                    value={approvalRent}
+                                    onChange={e => setApprovalRent(e.target.value)}
+                                    min="1"
+                                    required
+                                    autoFocus
+                                    style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '1rem', boxSizing: 'border-box' }}
+                                />
+                            </div>
+
+                            <div className="action-row" style={{ marginTop: '20px', justifyContent: 'flex-end' }}>
+                                <button type="button" className="btn-secondary" onClick={() => setApprovalApp(null)}>{t('common:buttons.cancel')}</button>
+                                <button type="button" className="btn-primary" onClick={confirmApproval} style={{ background: '#28a745' }}>{t('applications.approveAndConvert')}</button>
+                            </div>
                         </div>
                     </div>
                 )}

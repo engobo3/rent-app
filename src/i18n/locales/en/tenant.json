@@ -1,4 +1,17 @@
 {
+  "tabs": {
+    "payments": "Payments",
+    "repairs": "Repairs",
+    "documents": "Documents"
+  },
+  "profile": {
+    "unit": "Unit",
+    "monthlyRent": "Monthly Rent",
+    "phone": "Phone",
+    "email": "Email",
+    "owes": "Owes",
+    "paid": "Paid"
+  },
   "header": {
     "myHome": "MY HOME",
     "resident": "XWEGBE VIVI RESIDENT",
@@ -9,6 +22,8 @@
     "paidInFull": "Paid in Full",
     "payWithCard": "Pay with Card",
     "mobileMoney": "Mobile Money",
+    "amountLabel": "Amount to Pay",
+    "payFull": "Pay Full",
     "thankYou": "Thank you for your timely payment!"
   },
   "lease": {
@@ -34,7 +49,11 @@
     "submitError": "Error: {{message}}",
     "myRequests": "My Repair Requests",
     "noRequests": "No requests found.",
-    "reported": "Reported:"
+    "reported": "Reported:",
+    "cancelRequest": "Cancel",
+    "cancelConfirm": "Cancel this repair request?",
+    "cancelSuccess": "Repair request cancelled.",
+    "cancelFailed": "Failed to cancel request: {{message}}"
   },
   "payment": {
     "success": "Payment of {{amount}} CFA successful!",
@@ -61,5 +80,15 @@
     "securePayment": "Secure payment via FedaPay (MTN/Moov).",
     "payButton": "Pay {{amount}} CFA",
     "rentPayment": "Rent payment for tenant {{tenantId}}"
+  },
+  "statement": {
+    "title": "Payment History",
+    "monthlyRent": "Monthly Rent",
+    "currentBalance": "Current Balance",
+    "noPayments": "No payments recorded yet.",
+    "cancel": "Cancel",
+    "cancelConfirm": "Cancel this payment? The amount will be added back to your balance.",
+    "cancelSuccess": "Payment cancelled and balance adjusted.",
+    "cancelFailed": "Failed to cancel payment: {{message}}"
   }
 }

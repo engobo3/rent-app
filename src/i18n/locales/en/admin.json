@@ -5,8 +5,7 @@
   "tabs": {
     "overview": "Overview",
     "properties": "Properties",
-    "landlords": "Landlords",
-    "applications": "Applications"
+    "landlords": "Landlords"
   },
   "overview": {
     "totalRevenue": "Total Revenue",
@@ -18,7 +17,17 @@
   },
   "properties": {
     "title": "All Properties",
-    "noProperties": "No properties found."
+    "noProperties": "No properties found.",
+    "addProperty": "+ Add Property",
+    "addPropertyTitle": "Add Property",
+    "namePlaceholder": "Property Name (e.g. Sunset Apartments)",
+    "addressPlaceholder": "Address",
+    "selectLandlord": "Assign to Landlord",
+    "adding": "Adding...",
+    "deleteConfirm": "Delete this property? Data linked to it won't be deleted automatically.",
+    "deleted": "Property deleted",
+    "added": "Property added!",
+    "noLandlordsAvailable": "No landlords registered yet. A landlord must sign up first."
   },
   "landlords": {
     "title": "Registered Landlords",
@@ -28,20 +37,6 @@
     "joined": "Joined",
     "noLandlords": "No landlords found.",
     "na": "N/A"
-  },
-  "applications": {
-    "title": "All Applications",
-    "noApplications": "No applications found.",
-    "approve": "Approve",
-    "reject": "Reject",
-    "approved": "Application approved!",
-    "rejected": "Application rejected.",
-    "approveConfirm": "Approve {{name}} for {{unit}}?",
-    "rejectConfirm": "Reject and delete this application?",
-    "unit": "Unit: {{unit}}",
-    "income": "Income: {{amount}} CFA",
-    "status": "Status: {{status}}",
-    "unassigned": "Unassigned"
   },
   "errors": {
     "fetchFailed": "Error fetching admin data: {{message}}"

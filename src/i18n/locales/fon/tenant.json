@@ -1,4 +1,17 @@
 {
+  "tabs": {
+    "payments": "Sísú",
+    "repairs": "Huzuhuzu",
+    "documents": "Wema"
+  },
+  "profile": {
+    "unit": "Xɔ",
+    "monthlyRent": "Xwéxo Sun Ðokpo",
+    "phone": "Alǒkpo",
+    "email": "E-mail",
+    "owes": "Dò",
+    "paid": "Sú"
+  },
   "header": {
     "myHome": "XWÉ CE",
     "resident": "XWEGBE VIVI NƆTƐN",
@@ -9,6 +22,8 @@
     "paidInFull": "Sú Bǐ",
     "payWithCard": "Sú Kpo Carte Kpo",
     "mobileMoney": "Mobile Money",
+    "amountLabel": "Akwɛ Bo Na Sú",
+    "payFull": "Sú Bǐ",
     "thankYou": "Mǐ dó kú nú we nú sísú towe !"
   },
   "lease": {
@@ -34,7 +49,11 @@
     "submitError": "Afɔɖóte : {{message}}",
     "myRequests": "Byɔ Ce Lɛ",
     "noRequests": "Byɔ ɖě ɖè ǎ.",
-    "reported": "Ðɔ :"
+    "reported": "Ðɔ :",
+    "cancelRequest": "Ðè Kpò",
+    "cancelConfirm": "Ðè byɔ huzuhuzu elɔ kpò ?",
+    "cancelSuccess": "Byɔ huzuhuzu ɖè kpò.",
+    "cancelFailed": "Ðè kpò gblé : {{message}}"
   },
   "payment": {
     "success": "Sísú {{amount}} CFA ganji !",
@@ -61,5 +80,15 @@
     "securePayment": "Sísú ewu gbɔn FedaPay (MTN/Moov).",
     "payButton": "Sú {{amount}} CFA",
     "rentPayment": "Xwéxo sísú nú locataire {{tenantId}}"
+  },
+  "statement": {
+    "title": "Sísú Xóxó Lɛ",
+    "monthlyRent": "Xwéxo Sun Ðokpo",
+    "currentBalance": "Akwɛ E Kpò Ɔ",
+    "noPayments": "Sísú ɖě ɖè ǎ.",
+    "cancel": "Ðè Kpò",
+    "cancelConfirm": "Ðè sísú elɔ kpò ? Akwɛ ɔ na lɛ́ wá jí towe.",
+    "cancelSuccess": "Sísú ɖè kpò, akwɛ huzu.",
+    "cancelFailed": "Sísú ɖè kpò gblé : {{message}}"
   }
 }

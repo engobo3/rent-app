@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { db } from './firebase';
 import { collection, addDoc } from 'firebase/firestore';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 
 export function PublicApply() {
@@ -42,6 +42,20 @@ export function PublicApply() {
             setIsSubmitting(false);
         }
     };
+
+    if (!ownerId || !propertyId) {
+        return (
+            <div style={{ maxWidth: '700px', margin: '0 auto 60px', padding: 'clamp(20px, 5vw, 40px)', background: 'white', border: '1px solid #eee', textAlign: 'center' }}>
+                <h1 style={{ textTransform: 'uppercase', letterSpacing: '2px', fontSize: 'clamp(1.5rem, 4vw, 1.8rem)', color: 'var(--secondary-color)', marginBottom: '20px' }}>
+                    {t('apply.title')}
+                </h1>
+                <p style={{ fontSize: '1.1rem', color: '#666', marginBottom: '30px' }}>{t('apply.noListingWarning')}</p>
+                <Link to="/listings" className="btn-primary" style={{ display: 'inline-block', padding: '14px 30px', textDecoration: 'none' }}>
+                    {t('apply.backToListings')}
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div style={{ maxWidth: '700px', margin: '0 auto 60px', padding: 'clamp(20px, 5vw, 40px)', background: 'white', border: '1px solid #eee' }}>

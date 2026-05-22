@@ -71,7 +71,9 @@
     "submitting": "Ðò sɛ́ wɛ...",
     "submitApplication": "Sɛ́ Byɔ Ɔ",
     "submitted": "Byɔ ɔ yì ganji !",
-    "submitFailed": "Gblé : {{message}}"
+    "submitFailed": "Gblé : {{message}}",
+    "noListingWarning": "Byɔ xwé gbɔn annonce ɖé jí.",
+    "backToListings": "Kpɔ́n Annonce Lɛ"
   },
   "listings": {
     "title": "Xwé E Ðò Lɛ",

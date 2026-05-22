@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { db } from './firebase';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { type User } from 'firebase/auth';
-import type { Property, UserProfile, Tenant, RentalApplication } from './types';
+import type { Property, UserProfile, Tenant } from './types';
 import toast, { Toaster } from 'react-hot-toast';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
@@ -24,8 +24,14 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
     });
     const [properties, setProperties] = useState<Property[]>([]);
     const [landlords, setLandlords] = useState<UserProfile[]>([]);
-    const [applications, setApplications] = useState<RentalApplication[]>([]);
-    const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'landlords' | 'applications'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'landlords'>('overview');
+
+    // Property form state
+    const [propName, setPropName] = useState('');
+    const [propAddress, setPropAddress] = useState('');
+    const [propOwner, setPropOwner] = useState('');
+    const [isPropFormOpen, setIsPropFormOpen] = useState(false);
+    const [isAddingProp, setIsAddingProp] = useState(false);
 
     useEffect(() => {
         const fetchGlobalData = async () => {
@@ -45,11 +51,6 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
                 const usersList = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as unknown as UserProfile[];
                 const landlordsList = usersList.filter(u => u.role === 'landlord');
                 setLandlords(landlordsList);
-
-                // 4. Fetch Applications
-                const appsSnap = await getDocs(collection(db, 'applications'));
-                const appsList = appsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as unknown as RentalApplication[];
-                setApplications(appsList);
 
                 // Calculate Stats
                 const totalRev = tenantsList.reduce((acc, t) => {
@@ -77,6 +78,48 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
         fetchGlobalData();
     }, []);
 
+    const getLandlordName = (ownerId: string) => {
+        const landlord = landlords.find(l => l.uid === ownerId);
+        return landlord?.displayName || landlord?.email || ownerId;
+    };
+
+    const handleAddProperty = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!propName || !propAddress || !propOwner) {
+            toast.error(t('common:errors.fillAllFields'));
+            return;
+        }
+        setIsAddingProp(true);
+        try {
+            const newDoc = await addDoc(collection(db, 'properties'), {
+                ownerId: propOwner,
+                name: propName,
+                address: propAddress,
+                amenities: [],
+                image: ''
+            });
+            setProperties(prev => [...prev, { id: newDoc.id, ownerId: propOwner, name: propName, address: propAddress, amenities: [], image: '' }]);
+            setPropName(''); setPropAddress(''); setPropOwner('');
+            setIsPropFormOpen(false);
+            toast.success(t('properties.added'));
+        } catch (err) {
+            toast.error(t('errors.fetchFailed', { message: (err as Error).message }));
+        } finally {
+            setIsAddingProp(false);
+        }
+    };
+
+    const handleDeleteProperty = async (id: string) => {
+        if (!window.confirm(t('properties.deleteConfirm'))) return;
+        try {
+            await deleteDoc(doc(db, 'properties', id));
+            setProperties(prev => prev.filter(p => p.id !== id));
+            toast.success(t('properties.deleted'));
+        } catch (err) {
+            toast.error(t('errors.fetchFailed', { message: (err as Error).message }));
+        }
+    };
+
     return (
         <div style={{ background: '#f5f7fa', minHeight: '100vh', paddingBottom: 'clamp(24px, 5vw, 40px)' }}>
             {/* ADMIN HEADER */}
@@ -103,7 +146,7 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
 
                 {/* TABS */}
                 <div style={{ display: 'flex', gap: 'clamp(12px, 3vw, 20px)', marginBottom: 'clamp(20px, 4vw, 30px)', borderBottom: '1px solid #ddd', paddingBottom: '10px', overflowX: 'auto' }}>
-                    {['overview', 'properties', 'landlords', 'applications'].map(tab => (
+                    {['overview', 'properties', 'landlords'].map(tab => (
                         <div
                             key={tab}
                             onClick={() => setActiveTab(tab as typeof activeTab)}
@@ -147,7 +190,37 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
                     <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'clamp(16px, 3vw, 20px)', flexWrap: 'wrap', gap: '12px' }}>
                             <h3 style={{ fontSize: 'clamp(1rem, 3vw, 1.2rem)', margin: 0 }}>{t('properties.title')}</h3>
+                            <button className="btn-primary" onClick={() => setIsPropFormOpen(true)} style={{ padding: '8px 16px', minHeight: '44px', background: '#3498db', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: 'clamp(0.8rem, 2vw, 0.9rem)' }}>{t('properties.addProperty')}</button>
                         </div>
+
+                        {isPropFormOpen && (
+                            <div className="modal-overlay">
+                                <div className="modal-content" style={{ maxWidth: '500px', margin: '0 auto', background: 'white', padding: 'clamp(20px, 4vw, 30px)', borderRadius: '8px' }}>
+                                    <h3 style={{ marginTop: 0 }}>{t('properties.addPropertyTitle')}</h3>
+                                    {landlords.length === 0 ? (
+                                        <p style={{ color: '#888' }}>{t('properties.noLandlordsAvailable')}</p>
+                                    ) : (
+                                        <form onSubmit={handleAddProperty}>
+                                            <div style={{ display: 'grid', gap: '15px' }}>
+                                                <input placeholder={t('properties.namePlaceholder')} value={propName} onChange={e => setPropName(e.target.value)} required style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '1rem', boxSizing: 'border-box' }} />
+                                                <input placeholder={t('properties.addressPlaceholder')} value={propAddress} onChange={e => setPropAddress(e.target.value)} required style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '1rem', boxSizing: 'border-box' }} />
+                                                <select value={propOwner} onChange={e => setPropOwner(e.target.value)} required style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '1rem', boxSizing: 'border-box' }}>
+                                                    <option value="">{t('properties.selectLandlord')}</option>
+                                                    {landlords.map(l => (
+                                                        <option key={l.uid} value={l.uid}>{l.displayName || l.email}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
+                                                <button type="button" onClick={() => setIsPropFormOpen(false)} style={{ padding: '10px 20px', background: '#666', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', minHeight: '44px' }}>{t('common:buttons.cancel')}</button>
+                                                <button type="submit" className="btn-primary" disabled={isAddingProp} style={{ padding: '10px 20px', background: '#3498db', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', minHeight: '44px' }}>{isAddingProp ? t('properties.adding') : t('properties.addProperty')}</button>
+                                            </div>
+                                        </form>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         <div style={{ display: 'grid', gap: 'clamp(12px, 2.5vw, 15px)' }}>
                             {properties.map(p => (
                                 <div key={p.id} style={{ background: 'white', padding: 'clamp(16px, 3vw, 20px)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', flexWrap: 'wrap', gap: '12px' }}>
@@ -155,8 +228,11 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
                                         <div style={{ fontWeight: 600, fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)' }}>{p.name}</div>
                                         <div style={{ fontSize: 'clamp(0.8rem, 2vw, 0.9rem)', color: '#666' }}>{p.address}</div>
                                     </div>
-                                    <div style={{ fontSize: 'clamp(0.7rem, 2vw, 0.85rem)', background: '#eee', padding: '5px 10px', borderRadius: '4px', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 'min(200px, 40vw)', whiteSpace: 'nowrap' }}>
-                                        {p.ownerId}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                                        <div style={{ fontSize: 'clamp(0.7rem, 2vw, 0.85rem)', background: '#e0e7ff', color: '#4338ca', padding: '5px 10px', borderRadius: '4px', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 'min(200px, 40vw)', whiteSpace: 'nowrap' }}>
+                                            {getLandlordName(p.ownerId)}
+                                        </div>
+                                        <button onClick={() => handleDeleteProperty(p.id)} style={{ padding: '6px 12px', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', minHeight: '36px', fontSize: 'clamp(0.75rem, 2vw, 0.85rem)' }}>{t('common:buttons.delete')}</button>
                                     </div>
                                 </div>
                             ))}
@@ -209,77 +285,6 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
                         </div>
 
                         {landlords.length === 0 && <p style={{ padding: '20px', textAlign: 'center', fontSize: 'clamp(0.85rem, 2.5vw, 1rem)' }}>{t('landlords.noLandlords')}</p>}
-                    </div>
-                )}
-
-                {/* APPLICATIONS TAB */}
-                {activeTab === 'applications' && (
-                    <div>
-                        <h3 style={{ fontSize: 'clamp(1rem, 3vw, 1.2rem)', marginBottom: 'clamp(16px, 3vw, 20px)' }}>{t('applications.title')}</h3>
-                        <div style={{ display: 'grid', gap: 'clamp(12px, 2.5vw, 15px)' }}>
-                            {applications.map(app => (
-                                <div key={app.id} style={{ background: 'white', padding: 'clamp(16px, 3vw, 20px)', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '5px solid #6f42c1' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
-                                        <div>
-                                            <div style={{ fontWeight: 600, fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)' }}>{app.name}</div>
-                                            <div style={{ fontSize: 'clamp(0.8rem, 2vw, 0.9rem)', color: '#666' }}>{t('applications.unit', { unit: app.desiredUnit })}</div>
-                                        </div>
-                                        <span style={{
-                                            fontSize: 'clamp(0.7rem, 2vw, 0.8rem)',
-                                            background: app.status === 'pending' ? '#fff3cd' : app.status === 'approved' ? '#d4edda' : '#f8d7da',
-                                            color: app.status === 'pending' ? '#856404' : app.status === 'approved' ? '#155724' : '#721c24',
-                                            padding: '4px 10px',
-                                            borderRadius: '12px',
-                                            fontWeight: 600
-                                        }}>
-                                            {app.status}
-                                        </span>
-                                    </div>
-                                    <div style={{ fontSize: 'clamp(0.8rem, 2vw, 0.9rem)', color: '#666', marginBottom: '8px' }}>
-                                        {app.email} | {app.phone}
-                                    </div>
-                                    <div style={{ fontSize: 'clamp(0.8rem, 2vw, 0.9rem)', color: '#666', marginBottom: '12px' }}>
-                                        {t('applications.income', { amount: app.income?.toLocaleString() || '0' })}
-                                        {!app.ownerId && <span style={{ marginLeft: '10px', color: '#dc3545', fontWeight: 600 }}>({t('applications.unassigned')})</span>}
-                                    </div>
-                                    {app.status === 'pending' && (
-                                        <div style={{ display: 'flex', gap: '10px' }}>
-                                            <button
-                                                onClick={async () => {
-                                                    if (!window.confirm(t('applications.approveConfirm', { name: app.name, unit: app.desiredUnit }))) return;
-                                                    try {
-                                                        await deleteDoc(doc(db, 'applications', app.id));
-                                                        setApplications(prev => prev.filter(a => a.id !== app.id));
-                                                        toast.success(t('applications.approved'));
-                                                    } catch (err) {
-                                                        toast.error(t('errors.fetchFailed', { message: (err as Error).message }));
-                                                    }
-                                                }}
-                                                style={{ background: '#28a745', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', flex: 1, minHeight: '44px' }}
-                                            >
-                                                {t('applications.approve')}
-                                            </button>
-                                            <button
-                                                onClick={async () => {
-                                                    if (!window.confirm(t('applications.rejectConfirm'))) return;
-                                                    try {
-                                                        await deleteDoc(doc(db, 'applications', app.id));
-                                                        setApplications(prev => prev.filter(a => a.id !== app.id));
-                                                        toast.success(t('applications.rejected'));
-                                                    } catch (err) {
-                                                        toast.error(t('errors.fetchFailed', { message: (err as Error).message }));
-                                                    }
-                                                }}
-                                                style={{ background: '#dc3545', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', flex: 1, minHeight: '44px' }}
-                                            >
-                                                {t('applications.reject')}
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                            {applications.length === 0 && <p style={{ textAlign: 'center', color: '#888', fontSize: 'clamp(0.85rem, 2.5vw, 1rem)' }}>{t('applications.noApplications')}</p>}
-                        </div>
                     </div>
                 )}
 

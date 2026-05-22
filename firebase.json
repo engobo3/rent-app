@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "rentapp-baa9c",
     "public": "dist",
     "ignore": [
       "firebase.json",

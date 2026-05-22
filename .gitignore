@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Test coverage reports
+coverage
+
+# Local Claude Code settings
+.claude
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

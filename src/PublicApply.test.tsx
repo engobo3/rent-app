@@ -39,9 +39,21 @@ describe('PublicApply', () => {
     vi.clearAllMocks();
   });
 
-  it('renders application form', () => {
+  it('shows warning when no listing context', () => {
     render(
       <MemoryRouter>
+        <PublicApply />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Rental Application')).toBeInTheDocument();
+    expect(screen.getByText('Please apply through a property listing.')).toBeInTheDocument();
+    expect(screen.getByText('View Listings')).toBeInTheDocument();
+  });
+
+  it('renders application form with listing context', () => {
+    render(
+      <MemoryRouter initialEntries={['/apply?ownerId=owner1&propertyId=prop1']}>
         <PublicApply />
       </MemoryRouter>
     );
@@ -57,7 +69,7 @@ describe('PublicApply', () => {
 
   it('pre-fills unit from URL params', () => {
     render(
-      <MemoryRouter initialEntries={['/apply?unit=123']}>
+      <MemoryRouter initialEntries={['/apply?ownerId=owner1&propertyId=prop1&unit=123']}>
         <PublicApply />
       </MemoryRouter>
     );
@@ -70,7 +82,7 @@ describe('PublicApply', () => {
     const toast = await import('react-hot-toast');
 
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={['/apply?ownerId=owner1&propertyId=prop1']}>
         <PublicApply />
       </MemoryRouter>
     );
@@ -94,7 +106,6 @@ describe('PublicApply', () => {
         date: expect.any(String)
       }));
       expect(toast.default.success).toHaveBeenCalledWith('Application submitted successfully!');
-      // Navigate is called after timeout
     });
   });
 
@@ -103,7 +114,7 @@ describe('PublicApply', () => {
     const toast = await import('react-hot-toast');
 
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={['/apply?ownerId=owner1&propertyId=prop1']}>
         <PublicApply />
       </MemoryRouter>
     );

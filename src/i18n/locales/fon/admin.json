@@ -5,8 +5,7 @@
   "tabs": {
     "overview": "Kpɔ́n Bǐ",
     "properties": "Xwé Lɛ",
-    "landlords": "Xwétɔ́ Lɛ",
-    "applications": "Candidatures"
+    "landlords": "Xwétɔ́ Lɛ"
   },
   "overview": {
     "totalRevenue": "Akwɛ Bǐ",
@@ -18,7 +17,17 @@
   },
   "properties": {
     "title": "Xwé Bǐ",
-    "noProperties": "Xwé ɖě ɖè ǎ."
+    "noProperties": "Xwé ɖě ɖè ǎ.",
+    "addProperty": "+ Zé Xwé Ðě",
+    "addPropertyTitle": "Zé Xwé Ðě",
+    "namePlaceholder": "Nyikɔ Xwé (kpɔ́ndákpɔ́n : Appartements Soleil)",
+    "addressPlaceholder": "Adlɛsi",
+    "selectLandlord": "Sɔ́ Xwétɔ́",
+    "adding": "Ðò zé wɛ...",
+    "deleteConfirm": "Ðè xwé kpò ? Nǔ e ɖó kpo é kpo lɛ kún na yì ó.",
+    "deleted": "Xwé ɖè kpò",
+    "added": "Xwé zé ganji !",
+    "noLandlordsAvailable": "Xwétɔ́ ɖě wlǎn nyikɔ ǎ. Xwétɔ́ ɖé ɖó na wlǎn nyikɔ hwɛ̌."
   },
   "landlords": {
     "title": "Xwétɔ́ E Wlǎn Nyikɔ Lɛ",
@@ -28,20 +37,6 @@
     "joined": "Wlǎn Nyikɔ",
     "noLandlords": "Xwétɔ́ ɖě ɖè ǎ.",
     "na": "N/A"
-  },
-  "applications": {
-    "title": "Candidature Bǐ",
-    "noApplications": "Candidature ɖě ɖè ǎ.",
-    "approve": "Yí Gbè",
-    "reject": "Gbɛ́",
-    "approved": "Candidature yí gbè !",
-    "rejected": "Candidature gbɛ́.",
-    "approveConfirm": "Yí gbè nú {{name}} nú {{unit}} ?",
-    "rejectConfirm": "Gbɛ́ bo ɖè candidature élɔ síìn ?",
-    "unit": "Unité : {{unit}}",
-    "income": "Akwɛ : {{amount}} CFA",
-    "status": "Ninɔmɛ : {{status}}",
-    "unassigned": "È sɔ́ ɖó ǎ"
   },
   "errors": {
     "fetchFailed": "Afɔɖóte admin : {{message}}"

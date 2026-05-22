@@ -5,8 +5,7 @@
   "tabs": {
     "overview": "Vue d'ensemble",
     "properties": "Propriétés",
-    "landlords": "Propriétaires",
-    "applications": "Candidatures"
+    "landlords": "Propriétaires"
   },
   "overview": {
     "totalRevenue": "Revenu Total",
@@ -18,7 +17,17 @@
   },
   "properties": {
     "title": "Toutes les Propriétés",
-    "noProperties": "Aucune propriété trouvée."
+    "noProperties": "Aucune propriété trouvée.",
+    "addProperty": "+ Ajouter une Propriété",
+    "addPropertyTitle": "Ajouter une Propriété",
+    "namePlaceholder": "Nom de la propriété (ex : Appartements Soleil)",
+    "addressPlaceholder": "Adresse",
+    "selectLandlord": "Assigner à un Propriétaire",
+    "adding": "Ajout...",
+    "deleteConfirm": "Supprimer cette propriété ? Les données liées ne seront pas supprimées automatiquement.",
+    "deleted": "Propriété supprimée",
+    "added": "Propriété ajoutée !",
+    "noLandlordsAvailable": "Aucun propriétaire inscrit. Un propriétaire doit d'abord s'inscrire."
   },
   "landlords": {
     "title": "Propriétaires Enregistrés",
@@ -28,20 +37,6 @@
     "joined": "Inscription",
     "noLandlords": "Aucun propriétaire trouvé.",
     "na": "N/A"
-  },
-  "applications": {
-    "title": "Toutes les Candidatures",
-    "noApplications": "Aucune candidature trouvée.",
-    "approve": "Approuver",
-    "reject": "Rejeter",
-    "approved": "Candidature approuvée !",
-    "rejected": "Candidature rejetée.",
-    "approveConfirm": "Approuver {{name}} pour {{unit}} ?",
-    "rejectConfirm": "Rejeter et supprimer cette candidature ?",
-    "unit": "Unité : {{unit}}",
-    "income": "Revenu : {{amount}} CFA",
-    "status": "Statut : {{status}}",
-    "unassigned": "Non assignée"
   },
   "errors": {
     "fetchFailed": "Erreur lors de la récupération des données admin : {{message}}"

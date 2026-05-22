@@ -55,4 +55,36 @@ describe('HomePage', () => {
 
     expect(screen.getByText('Ekpe, Benin')).toBeInTheDocument();
   });
+
+  it('renders Apply Now CTA link', () => {
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    const applyLinks = screen.getAllByText(/Apply Now/i);
+    expect(applyLinks.length).toBeGreaterThan(0);
+  });
+
+  it('renders View Listings link', () => {
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    const viewLinks = screen.getAllByText(/View.*Listings|Browse/i);
+    expect(viewLinks.length).toBeGreaterThan(0);
+  });
+
+  it('renders scroll indicator arrow', () => {
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('↓')).toBeInTheDocument();
+  });
 });

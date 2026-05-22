@@ -12,14 +12,51 @@ describe('MainLayout', () => {
             </MemoryRouter>
         );
 
-        // Check Header content (Logo)
         expect(screen.getByRole('link', { name: /XWEGBE VIVI/i })).toBeInTheDocument();
-
-        // Check Child content
         expect(screen.getByTestId('child-content')).toBeInTheDocument();
-
-        // Check Footer content
         expect(screen.getByText(/Office Hours/i)).toBeInTheDocument();
         expect(screen.getByText(/All Rights Reserved/i)).toBeInTheDocument();
+    });
+
+    it('renders children content', () => {
+        render(
+            <MemoryRouter>
+                <MainLayout user={null}>
+                    <h1>Test Page Content</h1>
+                    <p>Some paragraph</p>
+                </MainLayout>
+            </MemoryRouter>
+        );
+
+        expect(screen.getByText('Test Page Content')).toBeInTheDocument();
+        expect(screen.getByText('Some paragraph')).toBeInTheDocument();
+    });
+
+    it('shows login link when user is null', () => {
+        render(
+            <MemoryRouter>
+                <MainLayout user={null}>
+                    <div>Content</div>
+                </MainLayout>
+            </MemoryRouter>
+        );
+
+        const links = screen.getAllByRole('link');
+        const loginLink = links.find(l => l.getAttribute('href') === '/login');
+        expect(loginLink).toBeInTheDocument();
+    });
+
+    it('shows dashboard link when user is authenticated', () => {
+        const mockUser = { uid: '123', email: 'test@example.com' } as unknown as import('firebase/auth').User;
+
+        render(
+            <MemoryRouter>
+                <MainLayout user={mockUser}>
+                    <div>Content</div>
+                </MainLayout>
+            </MemoryRouter>
+        );
+
+        expect(screen.getAllByText(/Dashboard/i)[0]).toBeInTheDocument();
     });
 });

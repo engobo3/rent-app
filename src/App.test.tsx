@@ -34,6 +34,7 @@ vi.mock('./LandlordDashboard', () => ({ LandlordDashboard: () => <div>LandlordDa
 vi.mock('./TenantPortal', () => ({ TenantPortal: () => <div>TenantPortal Component</div> }));
 vi.mock('./Listings.tsx', () => ({ Listings: () => <div>Listings Component</div> }));
 vi.mock('./PublicApply', () => ({ PublicApply: () => <div>PublicApply Component</div> }));
+vi.mock('./AdminDashboard', () => ({ AdminDashboard: () => <div>AdminDashboard Component</div> }));
 
 describe('App', () => {
   beforeEach(() => {
@@ -123,6 +124,138 @@ describe('App', () => {
 
     await waitFor(() => {
       expect(screen.getByText('TenantPortal Component')).toBeInTheDocument();
+    });
+  });
+
+  it('redirects tenant route to login when unauthenticated', async () => {
+    (auth.onAuthStateChanged as ReturnType<typeof vi.fn>).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
+      callback(null);
+      return vi.fn();
+    });
+
+    window.history.pushState({}, 'Test Page', '/tenant');
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText('LoginPage Component')).toBeInTheDocument();
+    });
+  });
+
+  it('renders AdminDashboard when authenticated as admin', async () => {
+    (auth.onAuthStateChanged as ReturnType<typeof vi.fn>).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
+      callback({ uid: 'admin1', email: 'admin@example.com' });
+      return vi.fn();
+    });
+
+    (firestore.getDoc as ReturnType<typeof vi.fn>).mockResolvedValue({
+      exists: () => true,
+      data: () => ({ role: 'admin' }),
+    });
+
+    window.history.pushState({}, 'Test Page', '/admin');
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText('AdminDashboard Component')).toBeInTheDocument();
+    });
+  });
+
+  it('redirects admin to login when unauthenticated', async () => {
+    (auth.onAuthStateChanged as ReturnType<typeof vi.fn>).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
+      callback(null);
+      return vi.fn();
+    });
+
+    window.history.pushState({}, 'Test Page', '/admin');
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText('LoginPage Component')).toBeInTheDocument();
+    });
+  });
+
+  it('auto-creates user profile when not found in Firestore', async () => {
+    (auth.onAuthStateChanged as ReturnType<typeof vi.fn>).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
+      callback({ uid: 'newuser', email: 'new@example.com', displayName: 'New User' });
+      return vi.fn();
+    });
+
+    (firestore.getDoc as ReturnType<typeof vi.fn>).mockResolvedValue({
+      exists: () => false,
+    });
+
+    (firestore.onSnapshot as ReturnType<typeof vi.fn>).mockImplementation((_query: unknown, callback: (snapshot: { empty: boolean; docs: unknown[] }) => void) => {
+      callback({ empty: true, docs: [] });
+      return vi.fn();
+    });
+
+    window.history.pushState({}, 'Test Page', '/dashboard');
+    render(<App />);
+
+    await waitFor(() => {
+      expect(firestore.setDoc).toHaveBeenCalled();
+      const call = (firestore.setDoc as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(call[1]).toEqual(expect.objectContaining({
+        uid: 'newuser',
+        email: 'new@example.com',
+      }));
+    });
+  });
+
+  it('cleans up auth listener on unmount', () => {
+    const unsubscribe = vi.fn();
+    (auth.onAuthStateChanged as ReturnType<typeof vi.fn>).mockImplementation(() => unsubscribe);
+
+    const { unmount } = render(<App />);
+    unmount();
+
+    expect(unsubscribe).toHaveBeenCalled();
+  });
+
+  it('handles Firestore getDoc rejection gracefully', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    (auth.onAuthStateChanged as ReturnType<typeof vi.fn>).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
+      callback({ uid: 'user1', email: 'test@example.com' });
+      return vi.fn();
+    });
+
+    (firestore.getDoc as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Firestore unavailable'));
+
+    window.history.pushState({}, 'Test Page', '/dashboard');
+    render(<App />);
+
+    // Should not crash — it should finish loading
+    await waitFor(() => {
+      // Loading should end (the error is caught and loading is set to false)
+      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+    });
+
+    consoleSpy.mockRestore();
+  });
+
+  it('handles non-landlord non-tenant user at /dashboard by redirecting to /tenant', async () => {
+    (auth.onAuthStateChanged as ReturnType<typeof vi.fn>).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
+      callback({ uid: 'user1', email: 'user@example.com' });
+      return vi.fn();
+    });
+
+    (firestore.getDoc as ReturnType<typeof vi.fn>).mockResolvedValue({
+      exists: () => true,
+      data: () => ({ role: 'tenant' }),
+    });
+
+    (firestore.onSnapshot as ReturnType<typeof vi.fn>).mockImplementation((_query: unknown, callback: (snapshot: { empty: boolean; docs: unknown[] }) => void) => {
+      callback({ empty: true, docs: [] });
+      return vi.fn();
+    });
+
+    window.history.pushState({}, 'Test Page', '/dashboard');
+    render(<App />);
+
+    // Tenant role goes to /tenant, but no tenant record => access denied message
+    await waitFor(() => {
+      expect(screen.getByText(/No tenant record found/i)).toBeInTheDocument();
     });
   });
 });

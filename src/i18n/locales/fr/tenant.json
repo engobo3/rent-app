@@ -1,4 +1,17 @@
 {
+  "tabs": {
+    "payments": "Paiements",
+    "repairs": "Réparations",
+    "documents": "Documents"
+  },
+  "profile": {
+    "unit": "Unité",
+    "monthlyRent": "Loyer Mensuel",
+    "phone": "Téléphone",
+    "email": "E-mail",
+    "owes": "Doit",
+    "paid": "Payé"
+  },
   "header": {
     "myHome": "MA MAISON",
     "resident": "XWEGBE VIVI RÉSIDENT",
@@ -9,6 +22,8 @@
     "paidInFull": "Entièrement Payé",
     "payWithCard": "Payer par Carte",
     "mobileMoney": "Mobile Money",
+    "amountLabel": "Montant à Payer",
+    "payFull": "Tout Payer",
     "thankYou": "Merci pour votre paiement ponctuel !"
   },
   "lease": {
@@ -34,7 +49,11 @@
     "submitError": "Erreur : {{message}}",
     "myRequests": "Mes Demandes de Réparation",
     "noRequests": "Aucune demande trouvée.",
-    "reported": "Signalé :"
+    "reported": "Signalé :",
+    "cancelRequest": "Annuler",
+    "cancelConfirm": "Annuler cette demande de réparation ?",
+    "cancelSuccess": "Demande de réparation annulée.",
+    "cancelFailed": "Échec de l'annulation : {{message}}"
   },
   "payment": {
     "success": "Paiement de {{amount}} CFA réussi !",
@@ -61,5 +80,15 @@
     "securePayment": "Paiement sécurisé via FedaPay (MTN/Moov).",
     "payButton": "Payer {{amount}} CFA",
     "rentPayment": "Paiement de loyer pour le locataire {{tenantId}}"
+  },
+  "statement": {
+    "title": "Historique des Paiements",
+    "monthlyRent": "Loyer Mensuel",
+    "currentBalance": "Solde Actuel",
+    "noPayments": "Aucun paiement enregistré.",
+    "cancel": "Annuler",
+    "cancelConfirm": "Annuler ce paiement ? Le montant sera rajouté à votre solde.",
+    "cancelSuccess": "Paiement annulé et solde ajusté.",
+    "cancelFailed": "Échec de l'annulation du paiement : {{message}}"
   }
 }

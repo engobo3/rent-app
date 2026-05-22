@@ -40,5 +40,18 @@ export default defineConfig({
     setupFiles: './src/setupTests.ts',
     exclude: ['functions/**', 'node_modules/**'],
     passWithNoTests: true,
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/test-utils.ts',
+        'src/setupTests.ts',
+        'src/vite-env.d.ts',
+        'src/i18n/**',
+        'src/firebase.ts',
+        'src/main.tsx',
+      ],
+    },
   },
 })

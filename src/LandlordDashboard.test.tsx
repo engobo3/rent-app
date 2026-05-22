@@ -21,7 +21,9 @@ vi.mock('firebase/firestore', () => ({
     deleteDoc: vi.fn(),
     doc: vi.fn(),
     arrayUnion: vi.fn(),
+    arrayRemove: vi.fn(),
     writeBatch: vi.fn(),
+    getDocs: vi.fn().mockResolvedValue({ empty: true, docs: [] }),
     getFirestore: vi.fn(),
 }));
 
@@ -110,6 +112,17 @@ describe('LandlordDashboard', () => {
         expect(screen.getAllByText(/Listings/i)[0]).toBeInTheDocument();
         expect(screen.getAllByText(/Expenses/i)[0]).toBeInTheDocument();
         expect(screen.getAllByText(/Repairs/i)[0]).toBeInTheDocument();
+        expect(screen.getAllByText(/Reports/i)[0]).toBeInTheDocument();
+    });
+
+    it('renders Reports tab with financial reports', () => {
+        render(<LandlordDashboard user={mockUser} onLogout={mockOnLogout} />);
+
+        fireEvent.click(screen.getByText(/^Reports/i));
+
+        expect(screen.getByText('Financial Reports')).toBeInTheDocument();
+        expect(screen.getByText('Export CSV')).toBeInTheDocument();
+        expect(screen.getByText('Billing History')).toBeInTheDocument();
     });
 
     it('navigates to Tenants tab and opens add tenant form', async () => {
@@ -184,7 +197,7 @@ describe('LandlordDashboard', () => {
         expect(mockOnLogout).toHaveBeenCalled();
     });
 
-    it('approves an application and creates a tenant with correct fields', async () => {
+    it('approves an application via modal with rent input', async () => {
         const mockApps = [
             {
                 id: 'app1',
@@ -206,43 +219,159 @@ describe('LandlordDashboard', () => {
             return vi.fn();
         });
 
-        vi.spyOn(window, 'confirm').mockImplementation(() => true);
-
         render(<LandlordDashboard user={mockUser} onLogout={mockOnLogout} />);
         // Navigate to Applications tab
         const appsTab = screen.getByText(/^Applications/i);
         fireEvent.click(appsTab);
 
-        // Verify card appears using heading role (more robust than text across elements)
+        // Verify card appears
         const cardHeading = await screen.findByRole('heading', { name: /Applicant One/i });
         expect(cardHeading).toBeInTheDocument();
 
-        // Find Approve button directly.
+        // Click Approve button to open modal
         const approveBtns = await screen.findAllByText((content, element) => {
             return element?.tagName.toLowerCase() === 'button' && content.includes('Approve');
         });
         expect(approveBtns.length).toBeGreaterThan(0);
-
         fireEvent.click(approveBtns[0]);
 
+        // Modal should appear with rent input
+        const rentInput = await screen.findByPlaceholderText('Monthly Rent (CFA)');
+        expect(rentInput).toBeInTheDocument();
+
+        // Enter rent amount and confirm
+        fireEvent.change(rentInput, { target: { value: '75000' } });
+
+        // Click the confirm button in the modal
+        const confirmBtns = await screen.findAllByText((content, element) => {
+            return element?.tagName.toLowerCase() === 'button' && content.includes('Approve');
+        });
+        // The last Approve button should be the confirm in the modal
+        fireEvent.click(confirmBtns[confirmBtns.length - 1]);
+
         await waitFor(() => {
-            // Verify batch.set was called with correct tenant data
             expect(mockBatch.set).toHaveBeenCalled();
             const setArgs = (mockBatch.set as ReturnType<typeof vi.fn>).mock.calls[0];
             expect(setArgs[1]).toMatchObject({
                 name: 'Applicant One',
-                email: 'applicant@test.com', // KEY: Email must be present
-                propertyId: 'prop123',       // KEY: Property ID must be present
+                email: 'applicant@test.com',
+                propertyId: 'prop123',
                 unit: 'Unit 101',
-                type: 'long-term',           // KEY: Default type
-                status: 'occupied'           // KEY: Default status
+                monthlyRent: 75000,
+                type: 'long-term',
+                status: 'occupied'
             });
 
-            // Verify app deletion
             expect(mockBatch.delete).toHaveBeenCalled();
-
-            // Verify commit
             expect(mockBatch.commit).toHaveBeenCalled();
         });
+    });
+
+    it('deletes a payment from tenant detail modal', async () => {
+        const mockTenants = [
+            {
+                id: 't1',
+                data: () => ({
+                    name: 'Test Tenant',
+                    email: 'test@test.com',
+                    unit: '101',
+                    monthlyRent: 50000,
+                    balance: 20000,
+                    payments: [
+                        { id: 1700000000000, amount: 30000, date: '11/14/2023', method: 'Cash/Check' }
+                    ],
+                    ownerId: 'landlord123'
+                })
+            }
+        ];
+
+        (firestore.onSnapshot as ReturnType<typeof vi.fn>).mockImplementation((_query: unknown, callback: (snapshot: { docs: unknown[] }) => void) => {
+            callback({ docs: mockTenants });
+            return vi.fn();
+        });
+
+        window.confirm = vi.fn(() => true);
+
+        render(<LandlordDashboard user={mockUser} onLogout={mockOnLogout} />);
+        fireEvent.click(screen.getByText(/^Tenants/i));
+
+        // Click on tenant name (h3) to open detail modal
+        const tenantNames = screen.getAllByText('Test Tenant');
+        const h3Element = tenantNames.find(el => el.tagName === 'H3');
+        fireEvent.click(h3Element!);
+
+        // Verify payment is visible in modal
+        await waitFor(() => {
+            expect(screen.getByText('11/14/2023')).toBeInTheDocument();
+        });
+
+        // Click the Delete button for the payment
+        const deleteBtns = screen.getAllByText('Delete');
+        fireEvent.click(deleteBtns[0]);
+
+        await waitFor(() => {
+            expect(firestore.updateDoc).toHaveBeenCalled();
+            const callArgs = (firestore.updateDoc as ReturnType<typeof vi.fn>).mock.calls[0];
+            expect(callArgs[1]).toMatchObject({ balance: 50000 });
+        });
+    });
+
+    // ─── Phase 3: Money/payment edge cases ──────────────────────────────────
+
+    it('disables save button while adding a tenant', async () => {
+        // Make addDoc hang to keep isAddingTenant=true
+        (firestore.addDoc as ReturnType<typeof vi.fn>).mockImplementation(() => new Promise(() => {}));
+
+        render(<LandlordDashboard user={mockUser} onLogout={mockOnLogout} />);
+        fireEvent.click(screen.getByText(/^Tenants/i));
+        fireEvent.click(screen.getByText('+ Add Unit / Tenant'));
+
+        fireEvent.change(screen.getByPlaceholderText('Unit Name / Tenant Name'), { target: { value: 'New Tenant' } });
+        fireEvent.change(screen.getByPlaceholderText('Unit Number'), { target: { value: '303' } });
+        fireEvent.change(screen.getByPlaceholderText('Phone Number'), { target: { value: '123456' } });
+        fireEvent.change(screen.getByPlaceholderText('Monthly Rent (CFA)'), { target: { value: '50000' } });
+
+        fireEvent.click(screen.getByText('Save Unit'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Save Unit')).toBeDisabled();
+        });
+    });
+
+    it('navigates to Expenses tab and shows add expense form', () => {
+        render(<LandlordDashboard user={mockUser} onLogout={mockOnLogout} />);
+
+        const expensesTabs = screen.getAllByText(/^Expenses/i);
+        fireEvent.click(expensesTabs[0]);
+
+        expect(screen.getByText('+ Add Expense')).toBeInTheDocument();
+    });
+
+    // ─── Phase 5: Feature coverage tests ────────────────────────────────────
+
+    it('shows property filter dropdown on dashboard', () => {
+        const mockProperties = [
+            { id: 'p1', data: () => ({ name: 'Property One', address: '123 Main St', ownerId: 'landlord123' }) },
+        ];
+
+        (firestore.onSnapshot as ReturnType<typeof vi.fn>).mockImplementation((_query: unknown, callback: (snapshot: { docs: unknown[] }) => void) => {
+            callback({ docs: mockProperties });
+            return vi.fn();
+        });
+
+        render(<LandlordDashboard user={mockUser} onLogout={mockOnLogout} />);
+
+        const selects = screen.getAllByRole('combobox');
+        expect(selects.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('navigates to Properties tab and shows content', () => {
+        render(<LandlordDashboard user={mockUser} onLogout={mockOnLogout} />);
+
+        const propertiesTabs = screen.getAllByText(/^Properties/i);
+        fireEvent.click(propertiesTabs[0]);
+
+        // Landlord view is read-only — shows "My Properties" title
+        expect(screen.getByText('My Properties')).toBeInTheDocument();
     });
 });

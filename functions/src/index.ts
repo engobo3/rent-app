@@ -1,4 +1,5 @@
 import { onCall } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
 import OpenAI from "openai";
@@ -128,3 +129,61 @@ export const emailReceipt = onCall({ secrets: [emailUser, emailPass] }, async (r
         throw new Error("Failed to send email: " + message);
     }
 });
+
+/**
+ * 4. SCHEDULED MONTHLY BILLING
+ * Runs at midnight on the 1st of each month (Benin time).
+ * Adds monthlyRent to each long-term tenant's balance.
+ */
+export const scheduledMonthlyBilling = onSchedule(
+    { schedule: "0 0 1 * *", timeZone: "Africa/Porto-Novo" },
+    async () => {
+        const db = admin.firestore();
+        const now = new Date();
+        const billingMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+        // Double-billing protection: check if this month was already billed
+        const existing = await db.collection("billingHistory")
+            .where("billingMonth", "==", billingMonth)
+            .limit(1)
+            .get();
+
+        if (!existing.empty) {
+            console.log(`Billing for ${billingMonth} already completed. Skipping.`);
+            return;
+        }
+
+        // Fetch all tenants
+        const tenantsSnap = await db.collection("tenants").get();
+        const batch = db.batch();
+        let tenantsCharged = 0;
+        let totalRentAdded = 0;
+
+        tenantsSnap.docs.forEach((docSnap) => {
+            const tenant = docSnap.data();
+            // Only bill long-term tenants (type undefined = long-term by default)
+            if (tenant.type === "short-term") return;
+            if (!tenant.monthlyRent || tenant.monthlyRent <= 0) return;
+
+            const newBalance = (tenant.balance || 0) + tenant.monthlyRent;
+            batch.update(docSnap.ref, { balance: newBalance });
+            tenantsCharged++;
+            totalRentAdded += tenant.monthlyRent;
+        });
+
+        if (tenantsCharged > 0) {
+            await batch.commit();
+        }
+
+        // Record billing in history
+        await db.collection("billingHistory").add({
+            billingMonth,
+            date: now.toISOString(),
+            tenantsCharged,
+            totalRentAdded,
+            triggeredBy: "auto",
+        });
+
+        console.log(`Monthly billing complete for ${billingMonth}: ${tenantsCharged} tenants charged, ${totalRentAdded} CFA total.`);
+    }
+);

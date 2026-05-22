@@ -11,7 +11,8 @@
     "applications": "Byɔ Lɛ",
     "listings": "Annonce Lɛ",
     "expenses": "Akwɛzínzɔ́n",
-    "repairs": "Huzuhuzu"
+    "repairs": "Huzuhuzu",
+    "reports": "Kɔ́ntu"
   },
   "propertyFilter": {
     "label": "Ðè Xwé :",
@@ -31,15 +32,7 @@
   },
   "properties": {
     "title": "Xwé Ce Lɛ",
-    "addProperty": "+ Zé Xwé Ðě",
-    "addPropertyTitle": "Zé Xwé Ðě",
-    "namePlaceholder": "Nyikɔ Xwé (kpɔ́ndákpɔ́n : Appartements Soleil)",
-    "addressPlaceholder": "Adlɛsi",
-    "adding": "Ðò zé wɛ...",
-    "noProperties": "Xwé ɖě ɖè ǎ. Zé ɖé bo bɛ́ !",
-    "deleteConfirm": "Ðè xwé kpò ? Nǔ e ɖó kpo é kpo lɛ kún na yì ó.",
-    "deleted": "Xwé ɖè kpò",
-    "added": "Xwé zé ganji !"
+    "noProperties": "Xwé ɖě ɖè ǎ. Ðɔ nú admin towe bó zé ɖé."
   },
   "tenants": {
     "addUnit": "+ Zé Unité / Locataire",
@@ -77,9 +70,14 @@
     "receipt": "Reçu",
     "email": "Email",
     "sending": "...",
+    "cashConfirm": "Wlǎn sísú akwɛ {{amount}} CFA ?",
     "recorded": "Sísú {{amount}} CFA tíìn !",
     "successful": "Sísú ganji !",
-    "failed": "Sísú gblé : {{message}}"
+    "failed": "Sísú gblé : {{message}}",
+    "delete": "Ðè Kpò",
+    "deleteConfirm": "Ðè sísú elɔ kpò ? Akwɛ ɔ na lɛ́ wá jí locataire tɔn.",
+    "paymentDeleted": "Sísú ɖè kpò, akwɛ huzu.",
+    "deleteFailed": "Sísú ɖè kpò gblé : {{message}}"
   },
   "applications": {
     "newApplication": "+ Byɔ Yɔyɔ̌",
@@ -98,7 +96,13 @@
     "nowTenant": "{{name}} nyí locataire dìn !",
     "approvalFailed": "Yí gbè gblé : {{message}}",
     "rejected": "Byɔ ɔ gbɛ́.",
-    "added": "Byɔ ɔ zé !"
+    "added": "Byɔ ɔ zé !",
+    "selectPropertyFirst": "Sɔ́ xwé ɖé hwɛ̌.",
+    "propertyLabel": "Xwé : {{name}}",
+    "approveTitle": "Yí Gbè Nú Byɔ",
+    "enterRent": "Ðɔ Xwéxo Sun Ðokpo",
+    "rentPlaceholder": "Xwéxo Sun Ðokpo (CFA)",
+    "rentRequired": "Ðɔ xwéxo sun ɖokpo ɖagbe."
   },
   "listings": {
     "createNew": "+ Ðó Annonce Yɔyɔ̌",
@@ -177,7 +181,8 @@
   "monthStart": {
     "confirm": "Bɛ́ sun yɔyɔ̌ ? Éyɛ na zé xwéxo dó akwɛ BǏ jí.",
     "success": "Sun yɔyɔ̌ bɛ́ ! Xwéxo zé.",
-    "failed": "Sun yɔyɔ̌ gblé : {{message}}"
+    "failed": "Sun yɔyɔ̌ gblé : {{message}}",
+    "alreadyBilled": "Xwéxo ko zé sun élɔ mɛ."
   },
   "receipt": {
     "title": "REÇU XWÉXO",
@@ -192,6 +197,40 @@
     "emailConfirm": "Sɛ́ reçu gbɔn email nú locataire ?",
     "emailed": "Reçu sɛ́ gbɔn email ganji !",
     "emailFailed": "Sɛ́ gblé : {{message}}"
+  },
+  "reports": {
+    "title": "Kɔ́ntu Akwɛ Tɔn",
+    "dateRange": "Hwenu",
+    "from": "Sín",
+    "to": "Jɛ",
+    "periodRevenue": "Akwɛ E Wá Ɔ",
+    "periodExpenses": "Akwɛzínzɔ́n Hwenu Ɔ Mɛ",
+    "periodNetProfit": "Lè Hwenu Ɔ Mɛ",
+    "revenueTable": "Akwɛ E Wá Lɛ",
+    "expenseTable": "Akwɛzínzɔ́n Lɛ",
+    "exportCsv": "Zé CSV",
+    "date": "Gbè",
+    "tenant": "Locataire",
+    "unit": "Unité",
+    "amount": "Akwɛ",
+    "method": "Ali",
+    "description": "Tinmɛ",
+    "category": "Xota",
+    "noRevenue": "Akwɛ ɖě wá ǎ hwenu élɔ mɛ.",
+    "noExpenses": "Akwɛzínzɔ́n ɖě ɖè ǎ hwenu élɔ mɛ.",
+    "billingHistory": "Xwéxo Zízé Xóxó",
+    "billingMonth": "Sun",
+    "dateTriggered": "Gbè E Bɛ́ É",
+    "tenantsCharged": "Locataire E Sú Lɛ",
+    "totalRentAdded": "Xwéxo Bǐ E Zé",
+    "trigger": "Nǔ E Bɛ́ É",
+    "auto": "Éɖée",
+    "manual": "Alɔ",
+    "noBillingHistory": "Xwéxo zízé xóxó ɖě ɖè ǎ.",
+    "undoBilling": "Ðè Kpò",
+    "undoConfirm": "Ðè xwéxo zízé elɔ kpò ? Éyɛ na ɖè akwɛ locataire lɛ bǐ tɔn.",
+    "undoSuccess": "Xwéxo zízé ɖè kpò ganji.",
+    "undoFailed": "Xwéxo zízé ɖè kpò gblé : {{message}}"
   },
   "whatsapp": {
     "reminder": "Kú dó {{name}}, xwéxo towe {{amount}} CFA kpo ɖò te. Sú kpò ɖè."

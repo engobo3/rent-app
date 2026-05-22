@@ -11,7 +11,8 @@
     "applications": "Candidatures",
     "listings": "Annonces",
     "expenses": "Dépenses",
-    "repairs": "Réparations"
+    "repairs": "Réparations",
+    "reports": "Rapports"
   },
   "propertyFilter": {
     "label": "Filtrer par Propriété :",
@@ -31,15 +32,7 @@
   },
   "properties": {
     "title": "Mes Propriétés",
-    "addProperty": "+ Ajouter une Propriété",
-    "addPropertyTitle": "Ajouter une Propriété",
-    "namePlaceholder": "Nom de la propriété (ex : Appartements Soleil)",
-    "addressPlaceholder": "Adresse",
-    "adding": "Ajout...",
-    "noProperties": "Aucune propriété trouvée. Ajoutez-en une pour commencer !",
-    "deleteConfirm": "Supprimer la propriété ? Les données liées ne seront pas supprimées automatiquement.",
-    "deleted": "Propriété supprimée",
-    "added": "Propriété ajoutée !"
+    "noProperties": "Aucune propriété trouvée. Contactez votre administrateur pour en ajouter."
   },
   "tenants": {
     "addUnit": "+ Ajouter Unité / Locataire",
@@ -77,9 +70,14 @@
     "receipt": "Reçu",
     "email": "Email",
     "sending": "...",
+    "cashConfirm": "Enregistrer le paiement en espèces de {{amount}} CFA ?",
     "recorded": "Paiement de {{amount}} CFA enregistré !",
     "successful": "Paiement réussi !",
-    "failed": "Échec du paiement : {{message}}"
+    "failed": "Échec du paiement : {{message}}",
+    "delete": "Supprimer",
+    "deleteConfirm": "Supprimer ce paiement ? Le montant sera rajouté au solde du locataire.",
+    "paymentDeleted": "Paiement supprimé et solde ajusté.",
+    "deleteFailed": "Échec de la suppression du paiement : {{message}}"
   },
   "applications": {
     "newApplication": "+ Nouvelle Candidature",
@@ -98,7 +96,13 @@
     "nowTenant": "{{name}} est maintenant locataire !",
     "approvalFailed": "Échec de l'approbation : {{message}}",
     "rejected": "Candidature rejetée.",
-    "added": "Candidature ajoutée !"
+    "added": "Candidature ajoutée !",
+    "selectPropertyFirst": "Veuillez d'abord sélectionner une propriété.",
+    "propertyLabel": "Propriété : {{name}}",
+    "approveTitle": "Approuver la Candidature",
+    "enterRent": "Entrer le Loyer Mensuel",
+    "rentPlaceholder": "Loyer Mensuel (CFA)",
+    "rentRequired": "Veuillez entrer un loyer mensuel valide."
   },
   "listings": {
     "createNew": "+ Créer une Nouvelle Annonce",
@@ -177,7 +181,8 @@
   "monthStart": {
     "confirm": "Commencer un nouveau mois ? Ceci ajoute le loyer à TOUS les soldes.",
     "success": "Nouveau mois commencé ! Loyer ajouté.",
-    "failed": "Échec du démarrage du mois : {{message}}"
+    "failed": "Échec du démarrage du mois : {{message}}",
+    "alreadyBilled": "Le loyer a déjà été ajouté ce mois-ci."
   },
   "receipt": {
     "title": "REÇU DE LOYER",
@@ -192,6 +197,40 @@
     "emailConfirm": "Envoyer le reçu par email au locataire ?",
     "emailed": "Reçu envoyé par email avec succès !",
     "emailFailed": "Échec de l'envoi : {{message}}"
+  },
+  "reports": {
+    "title": "Rapports Financiers",
+    "dateRange": "Période",
+    "from": "Du",
+    "to": "Au",
+    "periodRevenue": "Revenu de la Période",
+    "periodExpenses": "Dépenses de la Période",
+    "periodNetProfit": "Bénéfice Net de la Période",
+    "revenueTable": "Détails des Revenus",
+    "expenseTable": "Détails des Dépenses",
+    "exportCsv": "Exporter CSV",
+    "date": "Date",
+    "tenant": "Locataire",
+    "unit": "Unité",
+    "amount": "Montant",
+    "method": "Méthode",
+    "description": "Description",
+    "category": "Catégorie",
+    "noRevenue": "Aucun revenu pour cette période.",
+    "noExpenses": "Aucune dépense pour cette période.",
+    "billingHistory": "Historique de Facturation",
+    "billingMonth": "Mois de Facturation",
+    "dateTriggered": "Date de Déclenchement",
+    "tenantsCharged": "Locataires Facturés",
+    "totalRentAdded": "Loyer Total Ajouté",
+    "trigger": "Déclencheur",
+    "auto": "Automatique",
+    "manual": "Manuel",
+    "noBillingHistory": "Aucun historique de facturation.",
+    "undoBilling": "Annuler",
+    "undoConfirm": "Annuler ce cycle de facturation ? Ceci réduira le solde de tous les locataires de leur loyer mensuel.",
+    "undoSuccess": "Cycle de facturation annulé avec succès.",
+    "undoFailed": "Échec de l'annulation : {{message}}"
   },
   "whatsapp": {
     "reminder": "Bonjour {{name}}, ceci est un rappel amical que votre loyer de {{amount}} CFA est dû. Veuillez payer au plus tôt."

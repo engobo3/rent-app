@@ -71,7 +71,9 @@
     "submitting": "Envoi...",
     "submitApplication": "Soumettre la Demande",
     "submitted": "Demande soumise avec succès !",
-    "submitFailed": "Échec de la soumission : {{message}}"
+    "submitFailed": "Échec de la soumission : {{message}}",
+    "noListingWarning": "Veuillez postuler via une annonce de propriété.",
+    "backToListings": "Voir les Annonces"
   },
   "listings": {
     "title": "Logements Disponibles",

@@ -11,7 +11,8 @@
     "applications": "Applications",
     "listings": "Listings",
     "expenses": "Expenses",
-    "repairs": "Repairs"
+    "repairs": "Repairs",
+    "reports": "Reports"
   },
   "propertyFilter": {
     "label": "Filter by Property:",
@@ -31,15 +32,7 @@
   },
   "properties": {
     "title": "My Properties",
-    "addProperty": "+ Add Property",
-    "addPropertyTitle": "Add Property",
-    "namePlaceholder": "Property Name (e.g. Sunset Apartments)",
-    "addressPlaceholder": "Address",
-    "adding": "Adding...",
-    "noProperties": "No properties found. Add one to get started!",
-    "deleteConfirm": "Delete property? Data linked to it won't be deleted automatically.",
-    "deleted": "Property deleted",
-    "added": "Property added!"
+    "noProperties": "No properties found. Contact your admin to add one."
   },
   "tenants": {
     "addUnit": "+ Add Unit / Tenant",
@@ -77,9 +70,14 @@
     "receipt": "Receipt",
     "email": "Email",
     "sending": "...",
+    "cashConfirm": "Record cash payment of {{amount}} CFA?",
     "recorded": "Payment of {{amount}} CFA recorded!",
     "successful": "Payment Successful!",
-    "failed": "Payment failed: {{message}}"
+    "failed": "Payment failed: {{message}}",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this payment? The amount will be added back to the tenant's balance.",
+    "paymentDeleted": "Payment deleted and balance adjusted.",
+    "deleteFailed": "Failed to delete payment: {{message}}"
   },
   "applications": {
     "newApplication": "+ New Application",
@@ -98,7 +96,13 @@
     "nowTenant": "{{name}} is now a tenant!",
     "approvalFailed": "Approval failed: {{message}}",
     "rejected": "Application rejected.",
-    "added": "Application added!"
+    "added": "Application added!",
+    "selectPropertyFirst": "Please select a property first.",
+    "propertyLabel": "Property: {{name}}",
+    "approveTitle": "Approve Application",
+    "enterRent": "Enter Monthly Rent",
+    "rentPlaceholder": "Monthly Rent (CFA)",
+    "rentRequired": "Please enter a valid monthly rent."
   },
   "listings": {
     "createNew": "+ Create New Listing",
@@ -177,7 +181,8 @@
   "monthStart": {
     "confirm": "Start new month? This adds rent to ALL balances.",
     "success": "New month started! Rent added.",
-    "failed": "Failed to start month: {{message}}"
+    "failed": "Failed to start month: {{message}}",
+    "alreadyBilled": "Rent has already been added this month."
   },
   "receipt": {
     "title": "RENT RECEIPT",
@@ -192,6 +197,40 @@
     "emailConfirm": "Email receipt to tenant?",
     "emailed": "Receipt emailed successfully!",
     "emailFailed": "Failed to email: {{message}}"
+  },
+  "reports": {
+    "title": "Financial Reports",
+    "dateRange": "Date Range",
+    "from": "From",
+    "to": "To",
+    "periodRevenue": "Period Revenue",
+    "periodExpenses": "Period Expenses",
+    "periodNetProfit": "Period Net Profit",
+    "revenueTable": "Revenue Details",
+    "expenseTable": "Expense Details",
+    "exportCsv": "Export CSV",
+    "date": "Date",
+    "tenant": "Tenant",
+    "unit": "Unit",
+    "amount": "Amount",
+    "method": "Method",
+    "description": "Description",
+    "category": "Category",
+    "noRevenue": "No revenue in this period.",
+    "noExpenses": "No expenses in this period.",
+    "billingHistory": "Billing History",
+    "billingMonth": "Billing Month",
+    "dateTriggered": "Date Triggered",
+    "tenantsCharged": "Tenants Charged",
+    "totalRentAdded": "Total Rent Added",
+    "trigger": "Trigger",
+    "auto": "Automatic",
+    "manual": "Manual",
+    "noBillingHistory": "No billing history records.",
+    "undoBilling": "Undo",
+    "undoConfirm": "Undo this billing cycle? This will reduce all tenant balances by their monthly rent.",
+    "undoSuccess": "Billing cycle reversed successfully.",
+    "undoFailed": "Failed to undo billing: {{message}}"
   },
   "whatsapp": {
     "reminder": "Hello {{name}}, this is a friendly reminder that your rent of {{amount}} CFA is due. Please pay at your earliest convenience."

@@ -71,7 +71,9 @@
     "submitting": "Submitting...",
     "submitApplication": "Submit Application",
     "submitted": "Application submitted successfully!",
-    "submitFailed": "Submission failed: {{message}}"
+    "submitFailed": "Submission failed: {{message}}",
+    "noListingWarning": "Please apply through a property listing.",
+    "backToListings": "View Listings"
   },
   "listings": {
     "title": "Available Floor Plans",
