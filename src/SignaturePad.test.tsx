@@ -18,6 +18,8 @@ describe('SignaturePad', () => {
             stroke: vi.fn(),
             clearRect: vi.fn(),
             scale: vi.fn(),
+            // configureCanvas resets the transform before scaling.
+            setTransform: vi.fn(),
         };
         // Mock canvas getContext since jsdom doesn't have canvas
         HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCtx) as unknown as typeof HTMLCanvasElement.prototype.getContext;

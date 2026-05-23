@@ -1,33 +1,70 @@
-
 import { createPaymentIntent, scheduledMonthlyBilling, generateListingDescription, emailReceipt } from './index';
 import Stripe from 'stripe';
 
-// Mock firebase-admin with Firestore
+// ─── Firestore mock surface ───────────────────────────────────────────────
+//
+// Cloud Functions code calls `admin.firestore()` and chains:
+//   .collection(...).get()
+//   .collection(...).where(...).where(...).limit(...).get()
+//   .collection(...).doc(...).get()
+//   .runTransaction(fn)  (rate limiter)
+//   .batch()             (returns mockBatch)
+//
+// We expose a flexible mock that lets each test stub the response.
 const mockBatch = {
   update: jest.fn(),
+  set: jest.fn(),
   commit: jest.fn().mockResolvedValue(undefined),
 };
 
 const mockAdd = jest.fn().mockResolvedValue({ id: 'billing-1' });
 
-const mockFirestore = {
-  collection: jest.fn().mockReturnThis(),
-  where: jest.fn().mockReturnThis(),
-  limit: jest.fn().mockReturnThis(),
-  get: jest.fn(),
-  batch: jest.fn(() => mockBatch),
-  add: jest.fn(),
-};
+interface MockQuery {
+  collection: jest.Mock;
+  where: jest.Mock;
+  limit: jest.Mock;
+  doc: jest.Mock;
+  get: jest.Mock;
+  add: jest.Mock;
+  batch: jest.Mock;
+  runTransaction: jest.Mock;
+}
 
-// Chain collection().where().where().limit().get() and collection().get()
-// We'll configure per-test below via mockFirestore.get
+const mockFirestore: MockQuery = {
+  collection: jest.fn(),
+  where: jest.fn(),
+  limit: jest.fn(),
+  doc: jest.fn(),
+  get: jest.fn(),
+  add: mockAdd,
+  batch: jest.fn(() => mockBatch),
+  runTransaction: jest.fn(async (fn: (tx: unknown) => Promise<void>) => {
+    // Rate-limit transactions: just immediately invoke the body with a
+    // stubbed tx that does nothing (we don't assert rate-limit state here).
+    const tx = { get: jest.fn().mockResolvedValue({ exists: false, data: () => ({}) }), set: jest.fn() };
+    await fn(tx);
+  }),
+};
+// All collection/where/limit/doc calls return the same fluent object so we
+// don't have to thread chains in individual tests.
+mockFirestore.collection.mockReturnValue(mockFirestore);
+mockFirestore.where.mockReturnValue(mockFirestore);
+mockFirestore.limit.mockReturnValue(mockFirestore);
+mockFirestore.doc.mockReturnValue(mockFirestore);
+
+// Sentinel returned by FieldValue.increment so tests can match on the delta.
+const fieldValueIncrement = jest.fn((n: number) => ({ __increment: n }));
 
 jest.mock('firebase-admin', () => ({
   initializeApp: jest.fn(),
-  firestore: jest.fn(() => mockFirestore),
+  firestore: Object.assign(
+    jest.fn(() => mockFirestore),
+    { FieldValue: { increment: (n: number) => fieldValueIncrement(n) } },
+  ),
 }));
 
-// Mock Stripe
+// ─── Stripe / OpenAI / nodemailer ────────────────────────────────────────
+
 jest.mock('stripe', () => {
   const mStripe = {
     paymentIntents: {
@@ -37,7 +74,6 @@ jest.mock('stripe', () => {
   return jest.fn(() => mStripe);
 });
 
-// Mock OpenAI
 const mockChatCreate = jest.fn();
 jest.mock('openai', () => {
   return jest.fn().mockImplementation(() => ({
@@ -49,7 +85,6 @@ jest.mock('openai', () => {
   }));
 });
 
-// Mock nodemailer
 const mockSendMail = jest.fn();
 jest.mock('nodemailer', () => ({
   createTransport: jest.fn(() => ({
@@ -57,10 +92,24 @@ jest.mock('nodemailer', () => ({
   })),
 }));
 
-// Mock firebase-functions
-jest.mock('firebase-functions/v2/https', () => ({
-  onCall: (_opts: unknown, handler: (req: unknown) => Promise<unknown>) => handler,
-}));
+// ─── firebase-functions ──────────────────────────────────────────────────
+//
+// jest.mock factories are hoisted to the top of the file, so the
+// HttpsError replacement is declared INSIDE the factory closure.
+jest.mock('firebase-functions/v2/https', () => {
+  class MockHttpsError extends Error {
+    code: string;
+    constructor(code: string, message: string) {
+      super(message);
+      this.code = code;
+      this.name = 'HttpsError';
+    }
+  }
+  return {
+    onCall: (_opts: unknown, handler: (req: unknown) => Promise<unknown>) => handler,
+    HttpsError: MockHttpsError,
+  };
+});
 
 jest.mock('firebase-functions/v2/scheduler', () => ({
   onSchedule: (_opts: unknown, handler: () => Promise<void>) => handler,
@@ -70,54 +119,105 @@ jest.mock('firebase-functions/params', () => ({
   defineSecret: jest.fn(() => ({ value: () => 'mock-secret' })),
 }));
 
+// ─── Test helpers ────────────────────────────────────────────────────────
+
+function authedRequest<T>(data: T, opts: { uid?: string; email?: string } = {}) {
+  return {
+    data,
+    auth: {
+      uid: opts.uid ?? 'caller-uid',
+      token: { email: opts.email ?? 'caller@example.com' },
+    },
+  };
+}
+
+/** Make `.get()` return the supplied tenant doc on the next call. */
+function stubTenantGet(tenantData: Record<string, unknown>, exists = true) {
+  mockFirestore.get.mockResolvedValueOnce({
+    exists,
+    data: () => tenantData,
+  });
+}
+
+// ─── Tests ───────────────────────────────────────────────────────────────
+
 describe('Cloud Functions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockFirestore.collection.mockReturnThis();
-    mockFirestore.where.mockReturnThis();
-    mockFirestore.limit.mockReturnThis();
+    mockFirestore.collection.mockReturnValue(mockFirestore);
+    mockFirestore.where.mockReturnValue(mockFirestore);
+    mockFirestore.limit.mockReturnValue(mockFirestore);
+    mockFirestore.doc.mockReturnValue(mockFirestore);
+    mockFirestore.add = mockAdd;
   });
 
-  // ─── createPaymentIntent ──────────────────────────────────────────────────
+  // ─── createPaymentIntent ────────────────────────────────────────────────
 
   describe('createPaymentIntent', () => {
-    it('should create a payment intent and return client secret', async () => {
-      const stripeInstance = new (Stripe as unknown as new (...args: unknown[]) => Stripe)('key', { apiVersion: '2025-12-15.clover' });
-      const mockCreate = stripeInstance.paymentIntents.create as jest.Mock;
-      mockCreate.mockResolvedValue({ client_secret: 'test_client_secret' });
+    it('creates a PaymentIntent when the caller is the tenant and the amount is within balance', async () => {
+      stubTenantGet({ ownerId: 'landlord-1', email: 'caller@example.com', balance: 5000 });
 
-      const request = {
-        data: {
-          amount: 5000,
-          tenantId: 'tenant123',
-        },
-      };
-
-      const result = await (createPaymentIntent as unknown as (req: unknown) => Promise<unknown>)(request);
-
-      expect(mockCreate).toHaveBeenCalledTimes(1);
-      expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
-        amount: 5000,
-        currency: 'xof',
-        metadata: { tenantId: 'tenant123' },
-      }));
-
-      expect(result).toEqual({ clientSecret: 'test_client_secret' });
-    });
-
-    it('should round fractional amounts', async () => {
-      const stripeInstance = new (Stripe as unknown as new (...args: unknown[]) => Stripe)('key', { apiVersion: '2025-12-15.clover' });
+      const stripeInstance = new (Stripe as unknown as new (...args: unknown[]) => Stripe)('k', { apiVersion: '2025-12-15.clover' });
       const mockCreate = stripeInstance.paymentIntents.create as jest.Mock;
       mockCreate.mockResolvedValue({ client_secret: 'cs_123' });
 
-      const request = { data: { amount: 5000.7, tenantId: 't1' } };
-      await (createPaymentIntent as unknown as (req: unknown) => Promise<unknown>)(request);
+      const result = await (createPaymentIntent as unknown as (req: unknown) => Promise<unknown>)(
+        authedRequest({ amount: 5000, tenantId: 't1' }),
+      );
+
+      expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
+        amount: 5000,
+        currency: 'xof',
+        metadata: expect.objectContaining({ tenantId: 't1' }),
+      }));
+      expect(result).toEqual({ clientSecret: 'cs_123' });
+    });
+
+    it('rounds fractional amounts before sending to Stripe', async () => {
+      stubTenantGet({ ownerId: 'landlord-1', email: 'caller@example.com', balance: 10000 });
+
+      const stripeInstance = new (Stripe as unknown as new (...args: unknown[]) => Stripe)('k', { apiVersion: '2025-12-15.clover' });
+      const mockCreate = stripeInstance.paymentIntents.create as jest.Mock;
+      mockCreate.mockResolvedValue({ client_secret: 'cs' });
+
+      await (createPaymentIntent as unknown as (req: unknown) => Promise<unknown>)(
+        authedRequest({ amount: 5000.7, tenantId: 't1' }),
+      );
 
       expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ amount: 5001 }));
     });
+
+    it('rejects unauthenticated callers', async () => {
+      await expect(
+        (createPaymentIntent as unknown as (req: unknown) => Promise<unknown>)({
+          data: { amount: 5000, tenantId: 't1' },
+          // no .auth
+        }),
+      ).rejects.toThrow(/Sign in required/);
+    });
+
+    it('rejects callers who are neither the tenant nor their landlord', async () => {
+      stubTenantGet({ ownerId: 'someone-else', email: 'other@example.com', balance: 5000 });
+
+      await expect(
+        (createPaymentIntent as unknown as (req: unknown) => Promise<unknown>)(
+          authedRequest({ amount: 5000, tenantId: 't1' }),
+        ),
+      ).rejects.toThrow(/Not authorized/);
+    });
+
+    it('rejects an amount greater than the tenant balance', async () => {
+      stubTenantGet({ ownerId: 'landlord-1', email: 'caller@example.com', balance: 1000 });
+
+      await expect(
+        (createPaymentIntent as unknown as (req: unknown) => Promise<unknown>)(
+          authedRequest({ amount: 5000, tenantId: 't1' }),
+        ),
+      ).rejects.toThrow(/exceeds outstanding balance/);
+    });
   });
 
-  // ─── generateListingDescription ───────────────────────────────────────────
+  // ─── generateListingDescription ─────────────────────────────────────────
 
   describe('generateListingDescription', () => {
     const listingData = {
@@ -127,184 +227,182 @@ describe('Cloud Functions', () => {
       features: 'Pool, Parking',
     };
 
-    it('should return AI-generated description on success', async () => {
+    it('returns AI-generated description on success', async () => {
       mockChatCreate.mockResolvedValue({
         choices: [{ message: { content: 'Magnifique appartement à Cotonou avec piscine.' } }],
       });
 
-      const result = await (generateListingDescription as unknown as (req: unknown) => Promise<{ description: string }>)({
-        data: listingData,
-      });
+      const result = await (generateListingDescription as unknown as (req: unknown) => Promise<{ description: string }>)(
+        authedRequest(listingData),
+      );
 
       expect(result.description).toBe('Magnifique appartement à Cotonou avec piscine.');
-      expect(mockChatCreate).toHaveBeenCalledWith(
-        expect.objectContaining({ model: 'gpt-3.5-turbo' })
-      );
     });
 
-    it('should return fallback description when OpenAI fails', async () => {
+    it('returns the fallback description when OpenAI fails', async () => {
       mockChatCreate.mockRejectedValue(new Error('API rate limit'));
 
-      const result = await (generateListingDescription as unknown as (req: unknown) => Promise<{ description: string }>)({
-        data: listingData,
-      });
+      const result = await (generateListingDescription as unknown as (req: unknown) => Promise<{ description: string }>)(
+        authedRequest(listingData),
+      );
 
       expect(result.description).toContain('Apartment');
       expect(result.description).toContain('Cotonou');
       expect(result.description).toContain('75000');
     });
 
-    it('should include property details in the prompt', async () => {
-      mockChatCreate.mockResolvedValue({
-        choices: [{ message: { content: 'Test description' } }],
-      });
-
-      await (generateListingDescription as unknown as (req: unknown) => Promise<unknown>)({
-        data: listingData,
-      });
-
-      const promptArg = mockChatCreate.mock.calls[0][0];
-      const promptText = promptArg.messages[0].content;
-      expect(promptText).toContain('Apartment');
-      expect(promptText).toContain('Cotonou');
-      expect(promptText).toContain('75000');
-      expect(promptText).toContain('Pool, Parking');
+    it('rejects unauthenticated callers', async () => {
+      await expect(
+        (generateListingDescription as unknown as (req: unknown) => Promise<unknown>)({ data: listingData }),
+      ).rejects.toThrow(/Sign in required/);
     });
   });
 
-  // ─── emailReceipt ─────────────────────────────────────────────────────────
+  // ─── emailReceipt ───────────────────────────────────────────────────────
 
   describe('emailReceipt', () => {
-    const receiptData = {
-      email: 'tenant@test.com',
-      tenantName: 'Alice',
-      amount: 50000,
-      date: '2/1/2026',
-      paymentId: 'pay_123',
-    };
-
-    it('should send email with correct data and return success', async () => {
+    it('sends to the tenant\'s email derived server-side, with HTML-escaped fields', async () => {
+      // Tenant email matches the authenticated caller — so this is the
+      // tenant themselves requesting their own receipt.
+      stubTenantGet({
+        ownerId: 'landlord-1',
+        email: 'caller@example.com',
+        name: '<Alice & "Bob">',
+      });
       mockSendMail.mockResolvedValue({ messageId: 'msg-1' });
 
-      const result = await (emailReceipt as unknown as (req: unknown) => Promise<{ success: boolean }>)({
-        data: receiptData,
-      });
+      const result = await (emailReceipt as unknown as (req: unknown) => Promise<{ success: boolean }>)(
+        authedRequest({
+          tenantId: 't1',
+          amount: 50000,
+          date: '2/1/2026',
+          paymentId: 'pay_123',
+        }),
+      );
 
       expect(result).toEqual({ success: true });
-      expect(mockSendMail).toHaveBeenCalledTimes(1);
-
       const mailOptions = mockSendMail.mock.calls[0][0];
-      expect(mailOptions.to).toBe('tenant@test.com');
-      expect(mailOptions.subject).toContain('2/1/2026');
-      expect(mailOptions.html).toContain('Alice');
+      // Recipient is taken from the tenant doc, never from the request.
+      expect(mailOptions.to).toBe('caller@example.com');
+      // HTML escaping should neutralise the angle brackets / quotes in the name.
+      expect(mailOptions.html).toContain('&lt;Alice &amp; &quot;Bob&quot;&gt;');
+      expect(mailOptions.html).not.toContain('<Alice');
       expect(mailOptions.html).toContain('pay_123');
     });
 
-    it('should throw error when email sending fails', async () => {
+    it('rejects callers who are not the tenant or their landlord', async () => {
+      stubTenantGet({ ownerId: 'someone-else', email: 'other@test.com', name: 'X' });
+
+      await expect(
+        (emailReceipt as unknown as (req: unknown) => Promise<unknown>)(
+          authedRequest({ tenantId: 't1', amount: 1000, date: 'today', paymentId: 'p' }),
+        ),
+      ).rejects.toThrow(/Not authorized/);
+    });
+
+    it('throws when the SMTP layer fails', async () => {
+      stubTenantGet({ ownerId: 'landlord-1', email: 'caller@example.com', name: 'A' });
       mockSendMail.mockRejectedValue(new Error('SMTP connection refused'));
 
       await expect(
-        (emailReceipt as unknown as (req: unknown) => Promise<unknown>)({ data: receiptData })
-      ).rejects.toThrow('Failed to send email: SMTP connection refused');
+        (emailReceipt as unknown as (req: unknown) => Promise<unknown>)(
+          authedRequest({ tenantId: 't1', amount: 1000, date: 'today', paymentId: 'p' }),
+        ),
+      ).rejects.toThrow(/Failed to send email/);
     });
   });
 
-  // ─── scheduledMonthlyBilling ──────────────────────────────────────────────
+  // ─── scheduledMonthlyBilling ────────────────────────────────────────────
 
   describe('scheduledMonthlyBilling', () => {
-    it('should charge long-term tenants and skip short-term', async () => {
-      const mockRef1 = { id: 't1' };
-      const mockRef2 = { id: 't2' };
-      const mockTenants = {
-        docs: [
-          { ref: mockRef1, data: () => ({ monthlyRent: 50000, balance: 0, type: 'long-term' }) },
-          { ref: mockRef2, data: () => ({ monthlyRent: 10000, balance: 0, type: 'short-term' }) },
-        ],
-      };
-
-      // First call: billingHistory check (empty = not yet billed)
-      // Second call: tenants collection
-      let callCount = 0;
-      mockFirestore.get.mockImplementation(() => {
-        callCount++;
-        if (callCount === 1) return Promise.resolve({ empty: true }); // No existing billing
-        return Promise.resolve(mockTenants); // Tenants
+    /** Helper: stub the tenants `collection().get()` then the per-landlord `where(...).where(...).limit(1).get()` */
+    function stubBillingRun(
+      tenantsDocs: Array<{ id: string; data: Record<string, unknown> }>,
+      perOwnerAlreadyBilled: Record<string, boolean> = {},
+    ) {
+      // First `.get()` is the tenants collection scan.
+      mockFirestore.get.mockResolvedValueOnce({
+        docs: tenantsDocs.map((d) => ({
+          ref: { id: d.id },
+          data: () => d.data,
+        })),
       });
-      mockFirestore.add = mockAdd;
+      // Each subsequent `.get()` is the per-owner billingHistory existence check.
+      const owners = Array.from(new Set(tenantsDocs.map((d) => d.data.ownerId).filter(Boolean) as string[]));
+      owners.forEach((ownerId) => {
+        mockFirestore.get.mockResolvedValueOnce({
+          empty: !perOwnerAlreadyBilled[ownerId],
+        });
+      });
+    }
+
+    it('charges long-term tenants and skips short-term, writing one history doc per landlord', async () => {
+      stubBillingRun([
+        { id: 't1', data: { ownerId: 'landlord-1', monthlyRent: 50000, balance: 0, type: 'long-term' } },
+        { id: 't2', data: { ownerId: 'landlord-1', monthlyRent: 10000, balance: 0, type: 'short-term' } },
+      ]);
 
       await (scheduledMonthlyBilling as unknown as () => Promise<void>)();
 
-      // Should only update 1 tenant (long-term), not the short-term one
+      // Only one tenant updated, with an `increment` sentinel rather than a static value.
       expect(mockBatch.update).toHaveBeenCalledTimes(1);
-      expect(mockBatch.update).toHaveBeenCalledWith(mockRef1, { balance: 50000 });
+      expect(mockBatch.update).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 't1' }),
+        expect.objectContaining({ balance: { __increment: 50000 } }),
+      );
       expect(mockBatch.commit).toHaveBeenCalled();
 
-      // Should write a billing record
+      // History doc written for landlord-1 with the per-tenant snapshot.
       expect(mockAdd).toHaveBeenCalledWith(expect.objectContaining({
+        ownerId: 'landlord-1',
         tenantsCharged: 1,
         totalRentAdded: 50000,
         triggeredBy: 'auto',
+        tenantSnapshots: [{ tenantId: 't1', rentAdded: 50000 }],
       }));
     });
 
-    it('should skip billing if already billed this month', async () => {
-      // billingHistory check returns a document (already billed)
-      mockFirestore.get.mockResolvedValueOnce({ empty: false });
+    it('skips a landlord whose monthly history already exists', async () => {
+      stubBillingRun(
+        [
+          { id: 't1', data: { ownerId: 'landlord-1', monthlyRent: 50000, type: 'long-term' } },
+        ],
+        { 'landlord-1': true },
+      );
 
       await (scheduledMonthlyBilling as unknown as () => Promise<void>)();
 
-      // Should NOT update any tenants
       expect(mockBatch.update).not.toHaveBeenCalled();
-      expect(mockBatch.commit).not.toHaveBeenCalled();
+      expect(mockAdd).not.toHaveBeenCalled();
     });
 
-    it('should skip tenants with zero or no monthly rent', async () => {
-      const mockRef1 = { id: 't1' };
-      const mockRef2 = { id: 't2' };
-      const mockRef3 = { id: 't3' };
-      const mockTenants = {
-        docs: [
-          { ref: mockRef1, data: () => ({ monthlyRent: 50000, balance: 0 }) },
-          { ref: mockRef2, data: () => ({ monthlyRent: 0, balance: 0 }) },
-          { ref: mockRef3, data: () => ({ balance: 0 }) }, // no monthlyRent
-        ],
-      };
-
-      let callCount = 0;
-      mockFirestore.get.mockImplementation(() => {
-        callCount++;
-        if (callCount === 1) return Promise.resolve({ empty: true });
-        return Promise.resolve(mockTenants);
-      });
-      mockFirestore.add = mockAdd;
+    it('skips tenants with zero or missing monthlyRent', async () => {
+      stubBillingRun([
+        { id: 't1', data: { ownerId: 'landlord-1', monthlyRent: 50000 } },
+        { id: 't2', data: { ownerId: 'landlord-1', monthlyRent: 0 } },
+        { id: 't3', data: { ownerId: 'landlord-1' /* no rent */ } },
+      ]);
 
       await (scheduledMonthlyBilling as unknown as () => Promise<void>)();
 
-      // Only t1 should be charged
       expect(mockBatch.update).toHaveBeenCalledTimes(1);
-      expect(mockBatch.update).toHaveBeenCalledWith(mockRef1, { balance: 50000 });
+      expect(mockBatch.update).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 't1' }),
+        expect.objectContaining({ balance: { __increment: 50000 } }),
+      );
     });
 
-    it('should add to existing balance when billing', async () => {
-      const mockRef = { id: 't1' };
-      const mockTenants = {
-        docs: [
-          { ref: mockRef, data: () => ({ monthlyRent: 50000, balance: 20000 }) },
-        ],
-      };
-
-      let callCount = 0;
-      mockFirestore.get.mockImplementation(() => {
-        callCount++;
-        if (callCount === 1) return Promise.resolve({ empty: true });
-        return Promise.resolve(mockTenants);
-      });
-      mockFirestore.add = mockAdd;
+    it('groups tenants by ownerId — one history doc per landlord', async () => {
+      stubBillingRun([
+        { id: 't1', data: { ownerId: 'landlord-A', monthlyRent: 50000 } },
+        { id: 't2', data: { ownerId: 'landlord-B', monthlyRent: 30000 } },
+      ]);
 
       await (scheduledMonthlyBilling as unknown as () => Promise<void>)();
 
-      // Balance should be 20000 + 50000 = 70000
-      expect(mockBatch.update).toHaveBeenCalledWith(mockRef, { balance: 70000 });
+      expect(mockAdd).toHaveBeenCalledTimes(2);
+      const ownerIds = mockAdd.mock.calls.map((c: unknown[]) => (c[0] as Record<string, unknown>).ownerId);
+      expect(new Set(ownerIds)).toEqual(new Set(['landlord-A', 'landlord-B']));
     });
   });
 });

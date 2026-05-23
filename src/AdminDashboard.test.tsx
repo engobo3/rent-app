@@ -9,8 +9,9 @@ vi.mock('./firebase', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
-    collection: vi.fn(() => 'mock-collection'),
-    getDocs: vi.fn(),
+    // Returns a tag so tests can distinguish collections in the onSnapshot mock.
+    collection: vi.fn((_db: unknown, name: string) => ({ __collection: name })),
+    onSnapshot: vi.fn(),
     addDoc: vi.fn(),
     deleteDoc: vi.fn(),
     doc: vi.fn(),
@@ -38,8 +39,8 @@ describe('AdminDashboard', () => {
 
     const mockTenants = {
         docs: [
-            { id: 't1', data: () => ({ name: 'Tenant A', monthlyRent: 50000, balance: 10000, payments: [{ amount: 40000 }] }) },
-            { id: 't2', data: () => ({ name: 'Tenant B', monthlyRent: 60000, balance: 0, payments: [{ amount: 60000 }, { amount: 60000 }] }) },
+            { id: 't1', data: () => ({ ownerId: 'l1', name: 'Tenant A', monthlyRent: 50000, balance: 10000, payments: [{ amount: 40000 }] }) },
+            { id: 't2', data: () => ({ ownerId: 'l2', name: 'Tenant B', monthlyRent: 60000, balance: 0, payments: [{ amount: 60000 }, { amount: 60000 }] }) },
         ]
     };
 
@@ -59,11 +60,21 @@ describe('AdminDashboard', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        // getDocs is called 3 times: properties, tenants, users
-        (firestore.getDocs as ReturnType<typeof vi.fn>)
-            .mockResolvedValueOnce(mockProperties)
-            .mockResolvedValueOnce(mockTenants)
-            .mockResolvedValueOnce(mockUsers);
+        // The component subscribes to three collections via onSnapshot. Our
+        // mock dispatches each subscription to the right canned snapshot
+        // based on the collection name passed to `collection(db, name)`.
+        (firestore.onSnapshot as ReturnType<typeof vi.fn>).mockImplementation(
+            (
+                ref: { __collection?: string },
+                onNext: (snap: unknown) => void,
+            ) => {
+                const name = ref?.__collection;
+                if (name === 'properties') onNext(mockProperties);
+                else if (name === 'tenants') onNext(mockTenants);
+                else if (name === 'users') onNext(mockUsers);
+                return () => {}; // unsubscribe
+            },
+        );
     });
 
     it('renders admin header with user email', async () => {
@@ -238,11 +249,13 @@ describe('AdminDashboard', () => {
     });
 
     it('shows empty properties message when none exist', async () => {
-        (firestore.getDocs as ReturnType<typeof vi.fn>)
-            .mockReset()
-            .mockResolvedValueOnce({ docs: [] })    // properties
-            .mockResolvedValueOnce({ docs: [] })     // tenants
-            .mockResolvedValueOnce({ docs: [] });    // users
+        // Override the default snapshot mock — return empty for everything.
+        (firestore.onSnapshot as ReturnType<typeof vi.fn>).mockImplementation(
+            (_ref: unknown, onNext: (snap: unknown) => void) => {
+                onNext({ docs: [] });
+                return () => {};
+            },
+        );
 
         render(<AdminDashboard user={mockUser} onLogout={mockOnLogout} />);
         clickTab('Properties');
@@ -253,11 +266,12 @@ describe('AdminDashboard', () => {
     });
 
     it('shows empty landlords message when none exist', async () => {
-        (firestore.getDocs as ReturnType<typeof vi.fn>)
-            .mockReset()
-            .mockResolvedValueOnce({ docs: [] })
-            .mockResolvedValueOnce({ docs: [] })
-            .mockResolvedValueOnce({ docs: [] });
+        (firestore.onSnapshot as ReturnType<typeof vi.fn>).mockImplementation(
+            (_ref: unknown, onNext: (snap: unknown) => void) => {
+                onNext({ docs: [] });
+                return () => {};
+            },
+        );
 
         render(<AdminDashboard user={mockUser} onLogout={mockOnLogout} />);
         clickTab('Landlords');
@@ -269,9 +283,15 @@ describe('AdminDashboard', () => {
 
     it('handles fetch error gracefully', async () => {
         const toast = await import('react-hot-toast');
-        (firestore.getDocs as ReturnType<typeof vi.fn>)
-            .mockReset()
-            .mockRejectedValueOnce(new Error('Network error'));
+        // Push an error to the snapshot listener instead of mocking
+        // getDocs to reject (we now use onSnapshot, which surfaces failures
+        // via the third argument).
+        (firestore.onSnapshot as ReturnType<typeof vi.fn>).mockImplementation(
+            (_ref: unknown, _onNext: unknown, onError?: (err: Error) => void) => {
+                onError?.(new Error('Network error'));
+                return () => {};
+            },
+        );
 
         render(<AdminDashboard user={mockUser} onLogout={mockOnLogout} />);
 

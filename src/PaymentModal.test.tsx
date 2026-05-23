@@ -59,7 +59,7 @@ describe('PaymentModal', () => {
     });
 
     expect(screen.getByTestId('payment-element')).toBeInTheDocument();
-    expect(screen.getByText('Pay 5000 CFA')).toBeInTheDocument();
+    expect(screen.getByText('Pay 5,000 CFA')).toBeInTheDocument();
   });
 
   it('handles payment submission success', async () => {
@@ -68,10 +68,10 @@ describe('PaymentModal', () => {
     render(<PaymentModal {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Pay 5000 CFA')).toBeInTheDocument();
+      expect(screen.getByText('Pay 5,000 CFA')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('Pay 5000 CFA'));
+    fireEvent.click(screen.getByText('Pay 5,000 CFA'));
 
     await waitFor(() => {
       expect(mockStripe.confirmPayment).toHaveBeenCalled();
@@ -85,10 +85,10 @@ describe('PaymentModal', () => {
     render(<PaymentModal {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Pay 5000 CFA')).toBeInTheDocument();
+      expect(screen.getByText('Pay 5,000 CFA')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('Pay 5000 CFA'));
+    fireEvent.click(screen.getByText('Pay 5,000 CFA'));
 
     await waitFor(() => {
       expect(screen.getByText('Card declined')).toBeInTheDocument();
@@ -103,10 +103,10 @@ describe('PaymentModal', () => {
     render(<PaymentModal {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Pay 5000 CFA')).toBeInTheDocument();
+      expect(screen.getByText('Pay 5,000 CFA')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('Pay 5000 CFA'));
+    fireEvent.click(screen.getByText('Pay 5,000 CFA'));
 
     await waitFor(() => {
       expect(screen.getByText('Processing...')).toBeInTheDocument();
@@ -129,7 +129,7 @@ describe('PaymentModal', () => {
     render(<PaymentModal {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Pay 5000 CFA')).toBeInTheDocument();
+      expect(screen.getByText('Pay 5,000 CFA')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByText('Cancel'));

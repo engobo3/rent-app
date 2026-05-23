@@ -19,8 +19,11 @@ vi.mock('firebase/firestore', () => ({
     updateDoc: vi.fn(),
     deleteDoc: vi.fn(),
     doc: vi.fn(),
-    arrayUnion: vi.fn(),
-    arrayRemove: vi.fn(),
+    arrayUnion: vi.fn((x) => x),
+    arrayRemove: vi.fn((x) => x),
+    // Return a sentinel object so test assertions can verify the delta
+    // without needing to know about Firestore's FieldValue internals.
+    increment: vi.fn((n: number) => ({ __increment: n })),
     getFirestore: vi.fn(),
 }));
 
@@ -248,7 +251,10 @@ describe('TenantPortal', () => {
         await waitFor(() => {
             expect(firestore.updateDoc).toHaveBeenCalled();
             const callArgs = (firestore.updateDoc as ReturnType<typeof vi.fn>).mock.calls[0];
-            expect(callArgs[1]).toMatchObject({ balance: 50000 });
+            // Balance is now updated via `increment(payment.amount)` rather
+            // than a literal sum — assert against the sentinel produced by
+            // our mocked `increment`.
+            expect(callArgs[1]).toMatchObject({ balance: { __increment: 30000 } });
         });
     });
 
