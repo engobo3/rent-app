@@ -1,5 +1,13 @@
 export interface Payment {
+    /** Epoch ms when the payment was recorded. Used as sort key. */
     id: number;
+    /**
+     * Cryptographic random suffix appended when the payment is written.
+     * Prevents `arrayUnion` deep-equality collisions when two payments
+     * with identical id/amount/date/method are added in the same millisecond.
+     * Optional for backward compatibility with pre-Feb-2026 payments.
+     */
+    uid?: string;
     amount: number;
     date: string;
     method: string;
@@ -76,14 +84,26 @@ export interface Listing {
     dateAdded: string;
 }
 
+export interface TenantBillingSnapshot {
+    tenantId: string;
+    rentAdded: number;
+}
+
 export interface BillingHistoryEntry {
     id: string;
     billingMonth: string;        // "YYYY-MM"
-    ownerId?: string;            // present on manual records, may be missing on auto
+    ownerId: string;             // required — one history doc per landlord per month
     date: string;                // ISO string
     tenantsCharged: number;
     totalRentAdded: number;
     triggeredBy: 'auto' | 'manual';
+    /**
+     * Per-tenant breakdown of who was charged how much. Used by
+     * `handleUndoBilling` to reverse exactly the deltas that were applied,
+     * regardless of subsequent rent changes or new tenants.
+     * Optional for backward compatibility with pre-Feb-2026 records.
+     */
+    tenantSnapshots?: TenantBillingSnapshot[];
 }
 
 // ─── Role-Based User Profiles ────────────────────────────────────────────────

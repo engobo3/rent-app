@@ -79,7 +79,8 @@
     "amountToPay": "Montant à Payer :",
     "securePayment": "Paiement sécurisé via FedaPay (MTN/Moov).",
     "payButton": "Payer {{amount}} CFA",
-    "rentPayment": "Paiement de loyer pour le locataire {{tenantId}}"
+    "rentPayment": "Paiement de loyer pour le locataire {{tenantId}}",
+    "paymentNotCompleted": "Le paiement n'a pas été complété. Veuillez réessayer."
   },
   "statement": {
     "title": "Historique des Paiements",

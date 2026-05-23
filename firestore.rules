@@ -23,28 +23,34 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == ownerId;
     }
 
+    /**
+     * True if the requester's authenticated email matches the email on
+     * the tenant doc referenced by `tenantId`, AND that tenant doc is
+     * owned by `ownerId`. Used to gate tenant-initiated writes (repairs).
+     */
+    function callerOwnsTenantDoc(tenantId, ownerId) {
+      return isAuthenticated()
+        && request.auth.token.email != null
+        && exists(/databases/$(database)/documents/tenants/$(tenantId))
+        && get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == ownerId
+        && get(/databases/$(database)/documents/tenants/$(tenantId)).data.email == request.auth.token.email;
+    }
+
     // ─── User Profiles ─────────────────────────────────────────────────
     match /users/{userId} {
-      // Users can read their own profile; admins can read all
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      // Users can create their own profile on first login
       allow create: if isAuthenticated() && request.auth.uid == userId;
-      // Users can update their own profile (but not change role); admins can update any
       allow update: if isAuthenticated() && (
         (request.auth.uid == userId && request.resource.data.role == resource.data.role) ||
         isAdmin()
       );
-      // Only admins can delete user profiles
       allow delete: if isAdmin();
     }
 
     // ─── Properties ────────────────────────────────────────────────────
     match /properties/{propertyId} {
-      // Anyone authenticated can read properties
       allow read: if isAuthenticated();
-      // Landlords can create properties they own; admins can create any
       allow create: if isAuthenticated() && (request.resource.data.ownerId == request.auth.uid || isAdmin());
-      // Only the owner or admin can update/delete
       allow update, delete: if isAuthenticated() && (isOwner(resource.data.ownerId) || isAdmin());
     }
 
@@ -57,38 +63,52 @@ service cloud.firestore {
 
     // ─── Tenants ───────────────────────────────────────────────────────
     match /tenants/{tenantId} {
-      // Tenants can read their own record; landlords can read their tenants; admins read all
       allow read: if isAuthenticated() && (
         resource.data.email == request.auth.token.email ||
         isOwner(resource.data.ownerId) ||
         isAdmin()
       );
-      // Landlords can create tenants they own; admins can create any
       allow create: if isAuthenticated() && (request.resource.data.ownerId == request.auth.uid || isAdmin());
-      // Owner landlord, the tenant themselves, or admin can update
       allow update: if isAuthenticated() && (
         isOwner(resource.data.ownerId) ||
         resource.data.email == request.auth.token.email ||
         isAdmin()
       );
-      // Only owner landlord or admin can delete
       allow delete: if isAuthenticated() && (isOwner(resource.data.ownerId) || isAdmin());
     }
 
     // ─── Listings (Public Read) ────────────────────────────────────────
     match /listings/{listingId} {
-      // Public: anyone can read listings
       allow read: if true;
-      // Only the owner landlord or admin can write
       allow create: if isAuthenticated() && (request.resource.data.ownerId == request.auth.uid || isAdmin());
       allow update, delete: if isAuthenticated() && (isOwner(resource.data.ownerId) || isAdmin());
     }
 
     // ─── Applications ──────────────────────────────────────────────────
+    // Public create is intentional — prospective renters submit without an
+    // account. But we cap payload size and require the expected shape so the
+    // collection can't be spammed with arbitrary documents.
     match /applications/{appId} {
-      // Public: anyone can create an application (no auth required)
-      allow create: if true;
-      // Owner landlord or admin can read/update/delete
+      allow create: if
+        request.resource.data.keys().hasOnly([
+          'ownerId', 'propertyId', 'listingId',
+          'name', 'email', 'phone', 'income',
+          'desiredUnit', 'status', 'date', 'submittedAt'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 200
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 200
+        && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() <= 50
+        && request.resource.data.income is number
+        && request.resource.data.income >= 0
+        && request.resource.data.income < 1000000000
+        && request.resource.data.desiredUnit is string
+        && request.resource.data.desiredUnit.size() <= 100
+        && request.resource.data.status == 'pending';
       allow read: if isAuthenticated() && (isOwner(resource.data.ownerId) || isAdmin());
       allow update, delete: if isAuthenticated() && (isOwner(resource.data.ownerId) || isAdmin());
     }
@@ -101,16 +121,25 @@ service cloud.firestore {
     }
 
     // ─── Repairs ───────────────────────────────────────────────────────
+    // Only allow creates by the landlord (writing on a tenant's behalf) or by
+    // an authenticated tenant whose email matches a tenant doc owned by the
+    // referenced ownerId. Stops any signed-in user from spamming repairs.
     match /repairs/{repairId} {
-      // Tenants can read their own repairs; landlords read their property repairs; admins read all
       allow read: if isAuthenticated() && (
         resource.data.tenantId == request.auth.uid ||
         isOwner(resource.data.ownerId) ||
         isAdmin()
       );
-      // Tenants can create repair requests; landlords and admins can too
-      allow create: if isAuthenticated();
-      // Owner landlord or admin can update (resolve repairs)
+      allow create: if isAuthenticated()
+        && request.resource.data.ownerId is string
+        && (
+          // Landlord recording a repair on their own property.
+          request.resource.data.ownerId == request.auth.uid
+          // Or a tenant of that landlord — the tenant doc must already exist
+          // and its email must match the caller's authenticated email.
+          || callerOwnsTenantDoc(request.resource.data.tenantId, request.resource.data.ownerId)
+          || isAdmin()
+        );
       allow update: if isAuthenticated() && (
         isOwner(resource.data.ownerId) ||
         resource.data.tenantId == request.auth.uid ||
@@ -120,10 +149,16 @@ service cloud.firestore {
     }
 
     // ─── Billing History ────────────────────────────────────────────
+    // Each entry is scoped to ONE landlord (see scheduledMonthlyBilling).
     match /billingHistory/{billingId} {
       allow read: if isAuthenticated() && (isOwner(resource.data.ownerId) || isAdmin());
       allow create: if isAuthenticated() && (request.resource.data.ownerId == request.auth.uid || isAdmin());
       allow update, delete: if isAdmin();
+    }
+
+    // ─── Rate-limit counters (internal use by Cloud Functions only) ───
+    match /rateLimits/{key} {
+      allow read, write: if false;
     }
   }
 }

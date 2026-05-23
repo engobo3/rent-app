@@ -11,7 +11,23 @@ import { PaymentModal } from './PaymentModal';
 import { MobileMoneyModal } from './MobileMoneyModal';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, writeBatch, arrayUnion, arrayRemove, getDocs } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, writeBatch, arrayUnion, arrayRemove, getDocs, increment } from 'firebase/firestore';
+
+/**
+ * Build a Payment with a unique `uid` so arrayUnion's deep-equality semantics
+ * don't dedupe two near-simultaneous writes that happen to share id/amount/etc.
+ */
+function buildPayment(amount: number, method: string): Payment {
+    return {
+        id: Date.now(),
+        uid: typeof crypto !== 'undefined' && 'randomUUID' in crypto
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+        amount,
+        date: new Date().toLocaleDateString(),
+        method,
+    };
+}
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { FinancialReports } from './FinancialReports';
 
@@ -212,18 +228,30 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
                 return;
             }
 
-            const longTermTenants = tenants.filter(t => t.type !== 'short-term');
-            const batch = writeBatch(db);
-            let totalRentAdded = 0;
-            longTermTenants.forEach((tenant) => {
-                if (tenant.monthlyRent > 0) {
-                    batch.update(doc(db, "tenants", tenant.id), { balance: tenant.balance + tenant.monthlyRent });
-                    totalRentAdded += tenant.monthlyRent;
-                }
-            });
-            await batch.commit();
+            const longTermTenants = tenants.filter(t => t.type !== 'short-term' && t.monthlyRent > 0);
 
-            // Record billing in history
+            // Chunk the writes at 500 (Firestore batch hard limit) — a landlord
+            // with hundreds of tenants would otherwise fail the whole run.
+            const CHUNK = 500;
+            let totalRentAdded = 0;
+            const tenantSnapshots: { tenantId: string; rentAdded: number }[] = [];
+
+            for (let i = 0; i < longTermTenants.length; i += CHUNK) {
+                const slice = longTermTenants.slice(i, i + CHUNK);
+                const batch = writeBatch(db);
+                slice.forEach((tenant) => {
+                    // `increment()` so a concurrent payment doesn't get clobbered.
+                    batch.update(doc(db, "tenants", tenant.id), {
+                        balance: increment(tenant.monthlyRent),
+                    });
+                    totalRentAdded += tenant.monthlyRent;
+                    tenantSnapshots.push({ tenantId: tenant.id, rentAdded: tenant.monthlyRent });
+                });
+                await batch.commit();
+            }
+
+            // Record billing in history — include per-tenant snapshots so
+            // handleUndoBilling can reverse exactly the deltas we applied.
             await addDoc(collection(db, "billingHistory"), {
                 billingMonth,
                 ownerId: user.uid,
@@ -231,6 +259,7 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
                 tenantsCharged: longTermTenants.length,
                 totalRentAdded,
                 triggeredBy: 'manual',
+                tenantSnapshots,
             });
 
             toast.success(t('monthStart.success'));
@@ -301,12 +330,7 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
             const tenantRef = doc(db, "tenants", tenant.id);
 
             // 1. Add Payment Entry immediately (Upfront)
-            const newPayment: Payment = {
-                id: Date.now(),
-                amount: totalCost,
-                date: new Date().toLocaleDateString(),
-                method: "Cash/Mobile Money"
-            };
+            const newPayment = buildPayment(totalCost, "Cash/Mobile Money");
 
             batch.update(tenantRef, {
                 payments: arrayUnion(newPayment),
@@ -335,8 +359,8 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
 
         try {
             await updateDoc(doc(db, "tenants", tenantId), {
-                balance: tenant.balance - amount,
-                payments: arrayUnion({ id: Date.now(), amount, date: new Date().toLocaleDateString(), method: 'Cash/Check' })
+                balance: increment(-amount),
+                payments: arrayUnion(buildPayment(amount, 'Cash/Check')),
             });
             setPaymentAmount(""); setSelectedTenantId(null);
             toast.success(t('payments.recorded', { amount: amount.toLocaleString() }));
@@ -350,8 +374,8 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
         if (!tenant) return;
 
         await updateDoc(doc(db, "tenants", tenantId), {
-            balance: tenant.balance - amount,
-            payments: arrayUnion({ id: Date.now(), amount, date: new Date().toLocaleDateString(), method })
+            balance: increment(-amount),
+            payments: arrayUnion(buildPayment(amount, method)),
         });
 
         setShowCardModal(false);
@@ -605,14 +629,26 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
         if (!tenant) return;
 
         try {
+            // Match arrayRemove on the full shape, including uid if present.
+            const removeShape: Payment = {
+                id: payment.id,
+                amount: payment.amount,
+                date: payment.date,
+                method: payment.method,
+                ...(payment.uid !== undefined ? { uid: payment.uid } : {}),
+            };
             await updateDoc(doc(db, "tenants", tenantId), {
-                balance: tenant.balance + payment.amount,
-                payments: arrayRemove({ id: payment.id, amount: payment.amount, date: payment.date, method: payment.method })
+                balance: increment(payment.amount),
+                payments: arrayRemove(removeShape),
             });
+            // Optimistically reconcile the viewing pane; the snapshot
+            // listener will reconcile the canonical state moments later.
             setViewingTenant(prev => prev ? {
                 ...prev,
                 balance: prev.balance + payment.amount,
-                payments: prev.payments.filter(p => p.id !== payment.id)
+                payments: prev.payments.filter(p =>
+                    p.uid !== undefined ? p.uid !== payment.uid : p.id !== payment.id
+                ),
             } : null);
             toast.success(t('payments.paymentDeleted'));
         } catch (error) {
@@ -623,13 +659,28 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
     const handleUndoBilling = async (entry: BillingHistoryEntry) => {
         if (!window.confirm(t('reports.undoConfirm'))) return;
         try {
-            const longTermTenants = tenants.filter(t => t.type !== 'short-term');
             const batch = writeBatch(db);
-            longTermTenants.forEach((tenant) => {
-                if (tenant.monthlyRent > 0) {
-                    batch.update(doc(db, "tenants", tenant.id), { balance: tenant.balance - tenant.monthlyRent });
-                }
-            });
+
+            if (entry.tenantSnapshots && entry.tenantSnapshots.length > 0) {
+                // Modern path: reverse exactly the deltas we recorded.
+                // Safe against new tenants since the run and against rent changes.
+                entry.tenantSnapshots.forEach((snap) => {
+                    batch.update(doc(db, "tenants", snap.tenantId), {
+                        balance: increment(-snap.rentAdded),
+                    });
+                });
+            } else {
+                // Legacy path: pre-Feb-2026 records have no snapshot array.
+                // Best-effort reversal using current state — warn the user.
+                console.warn('Undoing legacy billing entry without tenantSnapshots; deltas approximate.');
+                const longTermTenants = tenants.filter(t => t.type !== 'short-term' && t.monthlyRent > 0);
+                longTermTenants.forEach((tenant) => {
+                    batch.update(doc(db, "tenants", tenant.id), {
+                        balance: increment(-tenant.monthlyRent),
+                    });
+                });
+            }
+
             batch.delete(doc(db, "billingHistory", entry.id));
             await batch.commit();
             toast.success(t('reports.undoSuccess'));
@@ -725,7 +776,8 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
         doc.text(t('receipt.amountPaid'), 20, 80);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(0, 128, 0); // Green color
-        doc.text(`${payment.amount.toFixed(2)} CFA`, 60, 80);
+        // XOF is zero-decimal — show a thousands-separated integer, not 5000.00.
+        doc.text(`${payment.amount.toLocaleString()} CFA`, 60, 80);
         doc.setTextColor(0, 0, 0); // Reset color
 
         doc.text(t('receipt.method', { method: payment.method || 'N/A' }), 20, 90);
@@ -746,13 +798,14 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
 
         setIsSendingEmail(true);
         try {
+            // Recipient is derived from `tenantId` server-side — we no longer
+            // pass an email so a compromised client can't redirect receipts.
             const emailReceiptFn = httpsCallable(functions, 'emailReceipt');
             await emailReceiptFn({
-                email: viewingTenant.email,
-                tenantName: viewingTenant.name,
+                tenantId: viewingTenant.id,
                 amount: payment.amount,
                 date: payment.date,
-                paymentId: payment.id
+                paymentId: payment.id,
             });
             toast.success(t('receipt.emailed'));
         } catch (error) {
@@ -932,7 +985,11 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
                                         }
                                         filteredTenants.forEach(t => {
                                             t.payments?.forEach(p => {
+                                                // payment.id is expected to be epoch ms — defensively
+                                                // skip any payment whose id doesn't parse as a date so
+                                                // a malformed row doesn't poison the whole chart.
                                                 const d = new Date(p.id);
+                                                if (isNaN(d.getTime())) return;
                                                 const key = `${d.getMonth() + 1}/${d.getFullYear()}`;
                                                 if (months[key] !== undefined) months[key] += p.amount;
                                             });
@@ -1094,6 +1151,8 @@ export function LandlordDashboard({ user, onLogout }: LandlordDashboardProps) {
                                                         <MobileMoneyModal
                                                             amount={parseFloat(paymentAmount)}
                                                             tenantId={tenant.id}
+                                                            tenantEmail={tenant.email}
+                                                            tenantName={tenant.name}
                                                             onSuccess={() => handlePaymentSuccess(tenant.id, parseFloat(paymentAmount), 'Mobile Money')}
                                                             onCancel={() => setShowMobileMoneyModal(false)}
                                                         />

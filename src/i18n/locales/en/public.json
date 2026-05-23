@@ -73,7 +73,12 @@
     "submitted": "Application submitted successfully!",
     "submitFailed": "Submission failed: {{message}}",
     "noListingWarning": "Please apply through a property listing.",
-    "backToListings": "View Listings"
+    "backToListings": "View Listings",
+    "invalidName": "Please enter a valid name (1–200 characters).",
+    "invalidEmail": "Please enter a valid email address.",
+    "invalidPhone": "Please enter a valid phone number.",
+    "invalidUnit": "Please enter a valid unit (1–100 characters).",
+    "invalidIncome": "Please enter a valid income amount."
   },
   "listings": {
     "title": "Available Floor Plans",

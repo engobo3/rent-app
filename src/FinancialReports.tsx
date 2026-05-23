@@ -20,6 +20,10 @@ export function FinancialReports({ tenants, expenses, billingHistory, onUndoBill
     const [toMonth, setToMonth] = useState(now.getMonth());
     const [toYear, setToYear] = useState(now.getFullYear());
 
+    // Period bounds use the BROWSER's local timezone. Reports may shift
+    // slightly when a landlord views from a different TZ — acceptable
+    // because the alternative (always Africa/Porto-Novo) requires Intl
+    // configuration we don't have here yet.
     const fromDate = useMemo(() => new Date(fromYear, fromMonth, 1), [fromYear, fromMonth]);
     const toDate = useMemo(() => new Date(toYear, toMonth + 1, 0, 23, 59, 59, 999), [toYear, toMonth]);
 
@@ -27,7 +31,10 @@ export function FinancialReports({ tenants, expenses, billingHistory, onUndoBill
         const results: EnrichedPayment[] = [];
         tenants.forEach(tenant => {
             tenant.payments?.forEach(payment => {
+                // payment.id is epoch ms — skip any malformed entry instead
+                // of letting it crash the table or skew the totals.
                 const paymentDate = new Date(payment.id);
+                if (isNaN(paymentDate.getTime())) return;
                 if (paymentDate >= fromDate && paymentDate <= toDate) {
                     results.push({ ...payment, tenantName: tenant.name, unit: tenant.unit });
                 }
@@ -39,9 +46,15 @@ export function FinancialReports({ tenants, expenses, billingHistory, onUndoBill
     const filteredExpenses = useMemo(() => {
         return expenses.filter(exp => {
             const expDate = new Date(exp.date);
-            if (isNaN(expDate.getTime())) return true; // include if unparseable
+            // Exclude entries whose `date` doesn't parse — previously these
+            // were included in EVERY period, double-counting against totals.
+            if (isNaN(expDate.getTime())) return false;
             return expDate >= fromDate && expDate <= toDate;
-        }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        }).sort((a, b) => {
+            const ta = new Date(a.date).getTime();
+            const tb = new Date(b.date).getTime();
+            return (isNaN(tb) ? 0 : tb) - (isNaN(ta) ? 0 : ta);
+        });
     }, [expenses, fromDate, toDate]);
 
     const periodRevenue = useMemo(() => filteredPayments.reduce((sum, p) => sum + p.amount, 0), [filteredPayments]);
@@ -64,9 +77,10 @@ export function FinancialReports({ tenants, expenses, billingHistory, onUndoBill
         const rows: string[][] = [];
 
         filteredPayments.forEach(p => {
+            const d = new Date(p.id);
             rows.push([
                 'Revenue',
-                new Date(p.id).toLocaleDateString(),
+                isNaN(d.getTime()) ? '' : d.toLocaleDateString(),
                 `${p.tenantName} (${p.unit})`,
                 'Rent Payment',
                 p.amount.toString(),

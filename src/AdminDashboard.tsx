@@ -2,11 +2,40 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { db } from './firebase';
-import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, onSnapshot, type DocumentData } from 'firebase/firestore';
 import { type User } from 'firebase/auth';
 import type { Property, UserProfile, Tenant } from './types';
 import toast, { Toaster } from 'react-hot-toast';
 import { LanguageSwitcher } from './LanguageSwitcher';
+
+/** Best-effort projection of a Firestore doc into Property — drops anything missing required fields. */
+function asProperty(id: string, data: DocumentData): Property | null {
+    if (typeof data.ownerId !== 'string' || typeof data.name !== 'string' || typeof data.address !== 'string') {
+        return null;
+    }
+    return { id, ...data } as Property;
+}
+
+function asTenant(id: string, data: DocumentData): Tenant | null {
+    if (typeof data.ownerId !== 'string' || typeof data.name !== 'string') {
+        return null;
+    }
+    return { id, ...data } as Tenant;
+}
+
+function asUserProfile(data: DocumentData): UserProfile | null {
+    if (typeof data.uid !== 'string' || typeof data.email !== 'string' || typeof data.role !== 'string') {
+        return null;
+    }
+    return data as UserProfile;
+}
+
+/** Format a date string; returns `'—'` for missing/unparseable values rather than 'Invalid Date'. */
+function formatDate(value: unknown): string {
+    if (typeof value !== 'string' || !value) return '—';
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
+}
 
 
 interface AdminDashboardProps {
@@ -33,49 +62,76 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
     const [isPropFormOpen, setIsPropFormOpen] = useState(false);
     const [isAddingProp, setIsAddingProp] = useState(false);
 
+    // Subscribe to global collections in real time. Previously we did a
+    // one-shot fetch, so the page went stale until reload and any state
+    // setter could fire on an unmounted component if the admin clicked away.
     useEffect(() => {
-        const fetchGlobalData = async () => {
-            try {
-                // 1. Fetch Properties
-                const propsSnap = await getDocs(collection(db, 'properties'));
-                const propsList = propsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Property[];
-                setProperties(propsList);
+        let tenantsCache: Tenant[] = [];
 
-                // 2. Fetch Tenants
-                const tenantsSnap = await getDocs(collection(db, 'tenants'));
-                const tenantsList = tenantsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Tenant[];
-                // setTenants(tenantsList);
-
-                // 3. Fetch Users (Landlords)
-                const usersSnap = await getDocs(collection(db, 'users'));
-                const usersList = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as unknown as UserProfile[];
-                const landlordsList = usersList.filter(u => u.role === 'landlord');
-                setLandlords(landlordsList);
-
-                // Calculate Stats
-                const totalRev = tenantsList.reduce((acc, t) => {
-                    const tenantPaid = t.payments?.reduce((pAcc, p) => pAcc + p.amount, 0) || 0;
-                    return acc + tenantPaid;
-                }, 0);
-
-
-                // Total units would need to be fetched from Units collection ideally.
-                // For now, let's just use tenant count as a proxy or fetch units.
-
-                setStats({
-                    totalProperties: propsList.length,
-                    totalTenants: tenantsList.length,
-                    totalRevenue: totalRev,
-                    occupancyRate: 0
-                });
-
-            } catch (err: unknown) {
-                const error = err instanceof Error ? err : new Error(String(err));
-                toast.error(t('errors.fetchFailed', { message: error.message }));
-            }
+        const recomputeStats = (propsCount: number) => {
+            const totalRev = tenantsCache.reduce((acc, tenant) => {
+                const paid = tenant.payments?.reduce((s, p) => s + (p.amount ?? 0), 0) ?? 0;
+                return acc + paid;
+            }, 0);
+            setStats({
+                totalProperties: propsCount,
+                totalTenants: tenantsCache.length,
+                totalRevenue: totalRev,
+                occupancyRate: 0,
+            });
         };
 
-        fetchGlobalData();
+        const handleError = (err: unknown) => {
+            const e = err instanceof Error ? err : new Error(String(err));
+            toast.error(t('errors.fetchFailed', { message: e.message }));
+        };
+
+        const unsubProps = onSnapshot(
+            collection(db, 'properties'),
+            (snap) => {
+                const list = snap.docs
+                    .map((d) => asProperty(d.id, d.data()))
+                    .filter((p): p is Property => p !== null);
+                setProperties(list);
+                recomputeStats(list.length);
+            },
+            handleError,
+        );
+
+        const unsubTenants = onSnapshot(
+            collection(db, 'tenants'),
+            (snap) => {
+                tenantsCache = snap.docs
+                    .map((d) => asTenant(d.id, d.data()))
+                    .filter((t): t is Tenant => t !== null);
+                // Snap properties count from current state (closures see latest).
+                setProperties((cur) => {
+                    recomputeStats(cur.length);
+                    return cur;
+                });
+            },
+            handleError,
+        );
+
+        const unsubUsers = onSnapshot(
+            collection(db, 'users'),
+            (snap) => {
+                const all = snap.docs
+                    .map((d) => asUserProfile(d.data()))
+                    .filter((u): u is UserProfile => u !== null);
+                setLandlords(all.filter((u) => u.role === 'landlord'));
+            },
+            handleError,
+        );
+
+        return () => {
+            unsubProps();
+            unsubTenants();
+            unsubUsers();
+        };
+    // The `t` function is stable across renders for the lifetime of the
+    // i18n instance, so subscribing once on mount is correct.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const getLandlordName = (ownerId: string) => {
@@ -91,14 +147,16 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
         }
         setIsAddingProp(true);
         try {
-            const newDoc = await addDoc(collection(db, 'properties'), {
+            await addDoc(collection(db, 'properties'), {
                 ownerId: propOwner,
                 name: propName,
                 address: propAddress,
                 amenities: [],
-                image: ''
+                image: '',
             });
-            setProperties(prev => [...prev, { id: newDoc.id, ownerId: propOwner, name: propName, address: propAddress, amenities: [], image: '' }]);
+            // No optimistic update — the snapshot listener will refresh the
+            // list within milliseconds, and avoids drift when concurrent
+            // admins are editing.
             setPropName(''); setPropAddress(''); setPropOwner('');
             setIsPropFormOpen(false);
             toast.success(t('properties.added'));
@@ -113,7 +171,7 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
         if (!window.confirm(t('properties.deleteConfirm'))) return;
         try {
             await deleteDoc(doc(db, 'properties', id));
-            setProperties(prev => prev.filter(p => p.id !== id));
+            // Snapshot listener will remove from the list.
             toast.success(t('properties.deleted'));
         } catch (err) {
             toast.error(t('errors.fetchFailed', { message: (err as Error).message }));
@@ -263,7 +321,7 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
                                             <td style={{ padding: 'clamp(12px, 2.5vw, 15px)' }}>{l.displayName || t('landlords.na')}</td>
                                             <td style={{ padding: 'clamp(12px, 2.5vw, 15px)' }}>{l.email}</td>
                                             <td style={{ padding: 'clamp(12px, 2.5vw, 15px)', fontFamily: 'monospace', fontSize: '0.85rem' }}>{l.uid}</td>
-                                            <td style={{ padding: 'clamp(12px, 2.5vw, 15px)' }}>{new Date(l.createdAt).toLocaleDateString()}</td>
+                                            <td style={{ padding: 'clamp(12px, 2.5vw, 15px)' }}>{formatDate(l.createdAt)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -278,7 +336,7 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
                                     <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '4px' }}>{l.email}</div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
                                         <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '60%' }}>{l.uid}</span>
-                                        <span style={{ fontSize: '0.8rem', color: '#888' }}>{new Date(l.createdAt).toLocaleDateString()}</span>
+                                        <span style={{ fontSize: '0.8rem', color: '#888' }}>{formatDate(l.createdAt)}</span>
                                     </div>
                                 </div>
                             ))}

@@ -2,7 +2,24 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Tenant, RepairRequest, Payment } from './types';
 import { db } from './firebase';
-import { collection, query, where, addDoc, onSnapshot, updateDoc, deleteDoc, doc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, query, where, addDoc, onSnapshot, updateDoc, deleteDoc, doc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
+
+/**
+ * Build a Payment object with a unique `uid` so two near-simultaneous writes
+ * with otherwise-identical data aren't deduplicated by `arrayUnion`'s
+ * deep-equality semantics.
+ */
+function buildPayment(amount: number, method: string): Payment {
+    return {
+        id: Date.now(),
+        uid: typeof crypto !== 'undefined' && 'randomUUID' in crypto
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+        amount,
+        date: new Date().toLocaleDateString(),
+        method,
+    };
+}
 import toast, { Toaster } from 'react-hot-toast';
 import { PaymentModal } from './PaymentModal';
 import { MobileMoneyModal } from './MobileMoneyModal';
@@ -64,9 +81,12 @@ export function TenantPortal({ tenant, onLogout }: TenantPortalProps) {
 
     const handlePaymentSuccess = async (amount: number, method: string) => {
         try {
-            const payment = { id: Date.now(), amount, date: new Date().toLocaleDateString(), method };
+            const payment = buildPayment(amount, method);
+            // Use Firestore `increment` so two quick clicks both decrement
+            // the balance correctly instead of computing against the same
+            // stale `tenant.balance` snapshot from props.
             await updateDoc(doc(db, "tenants", tenant.id), {
-                balance: tenant.balance - amount,
+                balance: increment(-amount),
                 payments: arrayUnion(payment)
             });
 
@@ -109,9 +129,19 @@ export function TenantPortal({ tenant, onLogout }: TenantPortalProps) {
     const handleCancelPayment = async (payment: Payment) => {
         if (!window.confirm(t('statement.cancelConfirm'))) return;
         try {
+            // `arrayRemove` matches on deep equality, so we need to pass the
+            // full payment object — including `uid` when present — to be
+            // sure we remove exactly the right entry.
+            const removeShape: Payment = {
+                id: payment.id,
+                amount: payment.amount,
+                date: payment.date,
+                method: payment.method,
+                ...(payment.uid !== undefined ? { uid: payment.uid } : {}),
+            };
             await updateDoc(doc(db, "tenants", tenant.id), {
-                balance: tenant.balance + payment.amount,
-                payments: arrayRemove({ id: payment.id, amount: payment.amount, date: payment.date, method: payment.method })
+                balance: increment(payment.amount),
+                payments: arrayRemove(removeShape)
             });
             toast.success(t('statement.cancelSuccess'));
         } catch (error) {
@@ -583,6 +613,8 @@ export function TenantPortal({ tenant, onLogout }: TenantPortalProps) {
                 <MobileMoneyModal
                     amount={getPaymentAmount()}
                     tenantId={tenant.id}
+                    tenantEmail={tenant.email}
+                    tenantName={tenant.name}
                     onSuccess={() => handlePaymentSuccess(getPaymentAmount(), 'Mobile Money')}
                     onCancel={() => setShowMobileMoneyModal(false)}
                 />

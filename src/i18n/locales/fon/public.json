@@ -73,7 +73,12 @@
     "submitted": "Byɔ ɔ yì ganji !",
     "submitFailed": "Gblé : {{message}}",
     "noListingWarning": "Byɔ xwé gbɔn annonce ɖé jí.",
-    "backToListings": "Kpɔ́n Annonce Lɛ"
+    "backToListings": "Kpɔ́n Annonce Lɛ",
+    "invalidName": "Nyikɔ ɖagbe ɖé wlǎn (1 jɛ 200 caractères).",
+    "invalidEmail": "Email ɖagbe ɖé wlǎn.",
+    "invalidPhone": "Telefoŋu ɖagbe ɖé wlǎn.",
+    "invalidUnit": "Xwé ɖagbe ɖé wlǎn (1 jɛ 100 caractères).",
+    "invalidIncome": "Akwɛ ɖagbe ɖé wlǎn."
   },
   "listings": {
     "title": "Xwé E Ðò Lɛ",

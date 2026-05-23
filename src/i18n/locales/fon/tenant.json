@@ -79,7 +79,8 @@
     "amountToPay": "Akwɛ Bo Na Sú :",
     "securePayment": "Sísú ewu gbɔn FedaPay (MTN/Moov).",
     "payButton": "Sú {{amount}} CFA",
-    "rentPayment": "Xwéxo sísú nú locataire {{tenantId}}"
+    "rentPayment": "Xwéxo sísú nú locataire {{tenantId}}",
+    "paymentNotCompleted": "Sísú ɔ wá gudo ǎ. Tɛnkpɔ́n vívɔ́."
   },
   "statement": {
     "title": "Sísú Xóxó Lɛ",

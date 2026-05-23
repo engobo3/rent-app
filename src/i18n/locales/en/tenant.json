@@ -79,7 +79,8 @@
     "amountToPay": "Amount to Pay:",
     "securePayment": "Secure payment via FedaPay (MTN/Moov).",
     "payButton": "Pay {{amount}} CFA",
-    "rentPayment": "Rent payment for tenant {{tenantId}}"
+    "rentPayment": "Rent payment for tenant {{tenantId}}",
+    "paymentNotCompleted": "Payment was not completed. Please try again."
   },
   "statement": {
     "title": "Payment History",

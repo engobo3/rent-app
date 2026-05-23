@@ -73,7 +73,12 @@
     "submitted": "Demande soumise avec succès !",
     "submitFailed": "Échec de la soumission : {{message}}",
     "noListingWarning": "Veuillez postuler via une annonce de propriété.",
-    "backToListings": "Voir les Annonces"
+    "backToListings": "Voir les Annonces",
+    "invalidName": "Veuillez entrer un nom valide (1 à 200 caractères).",
+    "invalidEmail": "Veuillez entrer une adresse e-mail valide.",
+    "invalidPhone": "Veuillez entrer un numéro de téléphone valide.",
+    "invalidUnit": "Veuillez entrer une unité valide (1 à 100 caractères).",
+    "invalidIncome": "Veuillez entrer un montant de revenu valide."
   },
   "listings": {
     "title": "Logements Disponibles",
