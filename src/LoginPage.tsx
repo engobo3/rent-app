@@ -1,20 +1,22 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from './firebase';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
+type Mode = 'signin' | 'signup';
+
 export function LoginPage() {
     const { t } = useTranslation(['public', 'common']);
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
+    const [mode, setMode] = useState<Mode>('signin');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [mode, setMode] = useState<'signin' | 'signup'>('signin');
     const navigate = useNavigate();
 
-    const handleLogin = async (e: React.FormEvent) => {
+    const handleLogin = async (e: FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         try {
@@ -33,7 +35,7 @@ export function LoginPage() {
         }
     };
 
-    const handleSignup = async (e: React.FormEvent) => {
+    const handleSignup = async (e: FormEvent) => {
         e.preventDefault();
         if (password !== confirmPassword) {
             toast.error(t('login.passwordsMismatch'));
@@ -60,117 +62,73 @@ export function LoginPage() {
         }
     };
 
-    const inputStyle = {
-        width: '100%',
-        padding: 'clamp(10px, 2.5vw, 12px)',
-        border: '1px solid #ddd',
-        fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
-        outline: 'none',
-        boxSizing: 'border-box' as const,
-    };
-
-    const labelStyle = {
-        display: 'block',
-        marginBottom: '8px',
-        fontSize: 'clamp(0.8rem, 2vw, 0.9rem)',
-        fontWeight: 600,
-        color: '#666',
-    };
+    const isSignin = mode === 'signin';
+    const heading = isSignin ? t('login.residentLogin') : t('login.createAccount');
 
     return (
-        <div style={{ maxWidth: '400px', width: '100%', padding: 'clamp(28px, 6vw, 40px)', background: 'white', border: '1px solid #eee' }}>
-            <h1 style={{
-                textAlign: 'center',
-                marginBottom: 'clamp(20px, 4vw, 30px)',
-                textTransform: 'uppercase',
-                letterSpacing: 'clamp(1px, 0.3vw, 2px)',
-                fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
-                color: 'var(--secondary-color)'
-            }}>
-                {mode === 'signin' ? t('login.residentLogin') : t('login.createAccount')}
-            </h1>
+        <div className="auth-card">
+            <h1 className="auth-card__title">{heading}</h1>
+            <p className="auth-card__subtitle">
+                {isSignin ? t('login.signIn') : t('login.signUp')}
+            </p>
 
-            {/* Toggle Tabs */}
-            <div style={{
-                display: 'flex',
-                marginBottom: 'clamp(20px, 4vw, 24px)',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                overflow: 'hidden'
-            }}>
+            {/* Mode toggle */}
+            <div className="segmented">
                 <button
                     type="button"
+                    aria-pressed={isSignin}
                     onClick={() => setMode('signin')}
-                    style={{
-                        flex: 1,
-                        padding: 'clamp(10px, 2.5vw, 12px)',
-                        border: 'none',
-                        background: mode === 'signin' ? 'var(--primary-color)' : 'white',
-                        color: mode === 'signin' ? 'white' : '#666',
-                        fontWeight: 600,
-                        fontSize: 'clamp(0.8rem, 2vw, 0.9rem)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                    }}
+                    className={`segmented__btn ${isSignin ? 'segmented__btn--active' : ''}`}
                 >
                     {t('login.signIn')}
                 </button>
                 <button
                     type="button"
+                    aria-pressed={!isSignin}
                     onClick={() => setMode('signup')}
-                    style={{
-                        flex: 1,
-                        padding: 'clamp(10px, 2.5vw, 12px)',
-                        border: 'none',
-                        borderLeft: '1px solid #ddd',
-                        background: mode === 'signup' ? 'var(--primary-color)' : 'white',
-                        color: mode === 'signup' ? 'white' : '#666',
-                        fontWeight: 600,
-                        fontSize: 'clamp(0.8rem, 2vw, 0.9rem)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                    }}
+                    className={`segmented__btn ${!isSignin ? 'segmented__btn--active' : ''}`}
                 >
                     {t('login.signUp')}
                 </button>
             </div>
 
-            <form onSubmit={mode === 'signin' ? handleLogin : handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(16px, 3vw, 20px)' }}>
-                <div>
-                    <label htmlFor="email" style={labelStyle}>{t('login.email')}</label>
+            <form onSubmit={isSignin ? handleLogin : handleSignup} className="auth-form">
+                <div className="form-group">
+                    <label htmlFor="email" className="form-label">{t('login.email')}</label>
                     <input
                         id="email"
                         type="email"
                         value={email}
-                        onChange={e => setEmail(e.target.value)}
+                        onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@example.com"
-                        style={inputStyle}
-                        required
-                    />
-                </div>
-                <div>
-                    <label htmlFor="password" style={labelStyle}>{t('login.password')}</label>
-                    <input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        placeholder={mode === 'signup' ? t('login.passwordSignupPlaceholder') : t('login.passwordPlaceholder')}
-                        style={inputStyle}
+                        autoComplete="email"
                         required
                     />
                 </div>
 
-                {mode === 'signup' && (
-                    <div>
-                        <label htmlFor="confirmPassword" style={labelStyle}>{t('login.confirmPassword')}</label>
+                <div className="form-group">
+                    <label htmlFor="password" className="form-label">{t('login.password')}</label>
+                    <input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder={isSignin ? t('login.passwordPlaceholder') : t('login.passwordSignupPlaceholder')}
+                        autoComplete={isSignin ? 'current-password' : 'new-password'}
+                        required
+                    />
+                </div>
+
+                {!isSignin && (
+                    <div className="form-group">
+                        <label htmlFor="confirmPassword" className="form-label">{t('login.confirmPassword')}</label>
                         <input
                             id="confirmPassword"
                             type="password"
                             value={confirmPassword}
-                            onChange={e => setConfirmPassword(e.target.value)}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
                             placeholder={t('login.confirmPlaceholder')}
-                            style={inputStyle}
+                            autoComplete="new-password"
                             required
                         />
                     </div>
@@ -179,31 +137,16 @@ export function LoginPage() {
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="btn-primary"
-                    style={{
-                        marginTop: '10px',
-                        opacity: isLoading ? 0.7 : 1,
-                        width: '100%',
-                        minHeight: '44px',
-                    }}
+                    className="btn btn-primary btn-lg btn-block"
                 >
                     {isLoading
-                        ? (mode === 'signin' ? t('login.signingIn') : t('login.creatingAccount'))
-                        : (mode === 'signin' ? t('login.signIn') : t('login.createAccount'))
-                    }
+                        ? (isSignin ? t('login.signingIn') : t('login.creatingAccount'))
+                        : (isSignin ? t('login.signIn') : t('login.createAccount'))}
                 </button>
             </form>
 
-            {mode === 'signup' && (
-                <p style={{
-                    marginTop: 'clamp(16px, 3vw, 20px)',
-                    fontSize: 'clamp(0.8rem, 2vw, 0.85rem)',
-                    color: '#888',
-                    textAlign: 'center',
-                    lineHeight: '1.5'
-                }}>
-                    {t('login.tenantHint')}
-                </p>
+            {!isSignin && (
+                <p className="auth-form__hint">{t('login.tenantHint')}</p>
             )}
         </div>
     );

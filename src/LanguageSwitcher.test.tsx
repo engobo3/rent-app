@@ -54,11 +54,13 @@ describe('LanguageSwitcher', () => {
 
         // FR is the current language (mocked as 'fr')
         const frBtn = screen.getByText('FR');
-        expect(frBtn).toHaveStyle({ fontWeight: 700 });
+        expect(frBtn).toHaveAttribute('aria-pressed', 'true');
+        expect(frBtn.className).toMatch(/lang-switcher__btn--active/);
 
         // EN should not be highlighted
         const enBtn = screen.getByText('EN');
-        expect(enBtn).toHaveStyle({ fontWeight: 400 });
+        expect(enBtn).toHaveAttribute('aria-pressed', 'false');
+        expect(enBtn.className).not.toMatch(/lang-switcher__btn--active/);
     });
 
     it('calls changeLanguage for each language', () => {

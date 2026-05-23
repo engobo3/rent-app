@@ -15,19 +15,19 @@ export function Header({ user }: HeaderProps) {
     const navigate = useNavigate();
     const { t } = useTranslation(['public', 'common']);
 
-    // Handle scroll effect for transparent header
+    // Add a small shadow / opaque background once the user scrolls past the hero.
     useEffect(() => {
-        const handleScroll = () => {
-            if (window.scrollY > 50) {
-                setScrolled(true);
-            } else {
-                setScrolled(false);
-            }
-        };
-
-        window.addEventListener('scroll', handleScroll);
+        const handleScroll = () => setScrolled(window.scrollY > 50);
+        handleScroll();
+        window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    // Lock body scroll while the drawer is open.
+    useEffect(() => {
+        document.body.style.overflow = menuOpen ? 'hidden' : '';
+        return () => { document.body.style.overflow = ''; };
+    }, [menuOpen]);
 
     const handleLogout = async () => {
         try {
@@ -38,152 +38,113 @@ export function Header({ user }: HeaderProps) {
         }
     };
 
+    const headerClass = [
+        'site-header',
+        scrolled || menuOpen ? 'site-header--scrolled' : '',
+        menuOpen ? 'site-header--menu-open' : '',
+    ].filter(Boolean).join(' ');
+
+    const switcherVariant = scrolled || menuOpen ? 'light' : 'dark';
+
     return (
-        <header style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 1000,
-            background: scrolled || menuOpen ? 'white' : 'transparent',
-            boxShadow: scrolled ? '0 2px 10px rgba(0,0,0,0.1)' : 'none',
-            transition: 'all 0.3s ease',
-            color: scrolled || menuOpen ? 'var(--secondary-color)' : 'white',
-            padding: '0 var(--spacing-md)',
-            height: 'var(--header-height, 80px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-        }}>
-            {/* Logo area */}
-            <div className="logo" style={{ zIndex: 1002 }}>
-                <Link to="/" style={{
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: 'clamp(0.9rem, 3vw, 1.2rem)',
-                    fontWeight: 700,
-                    letterSpacing: 'clamp(1px, 0.3vw, 2px)',
-                    textTransform: 'uppercase',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'clamp(6px, 2vw, 10px)',
-                    flexWrap: 'wrap'
-                }}>
-                    XWEGBE <span style={{ fontWeight: 300, fontSize: 'clamp(0.7rem, 2.5vw, 0.9rem)' }}>VIVI</span>
+        <header className={headerClass}>
+            <div className="logo">
+                <Link to="/" className="site-logo">
+                    XWEGBE <span className="site-logo__accent">VIVI</span>
                     <span className="beta-badge">{t('common:app.beta')}</span>
                 </Link>
             </div>
 
-            {/* Desktop Navigation Icons */}
-            <div className="nav-icons" style={{ display: 'flex', alignItems: 'center', gap: '20px', zIndex: 1002 }}>
+            <nav className="site-nav">
                 <div className="hide-mobile">
-                    <LanguageSwitcher variant={scrolled ? 'light' : 'dark'} />
+                    <LanguageSwitcher variant={switcherVariant} />
                 </div>
 
-                <a href="tel:+22990000000" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', fontWeight: 600 }} className="hide-mobile">
+                <a href="tel:+22990000000" className="site-nav__phone hide-mobile">
                     <span>{t('public:header.phone')}</span>
                 </a>
 
-                <Link to="/apply" style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    background: 'var(--primary-color)',
-                    color: 'white',
-                    padding: '10px 20px',
-                    borderRadius: 'var(--border-radius)',
-                    textTransform: 'uppercase',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    letterSpacing: '1px'
-                }} className="hide-mobile">
+                <Link to="/apply" className="site-nav__cta hide-mobile">
                     {t('common:nav.applyNow')}
                 </Link>
 
                 {user ? (
-                    <div className="hide-mobile" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <Link to="/dashboard" style={{ fontWeight: 600 }}>{t('common:nav.dashboard')}</Link>
-                        <button onClick={handleLogout} style={{ fontWeight: 600, color: 'inherit' }}>{t('common:nav.logout')}</button>
+                    <div className="hide-mobile row" style={{ gap: 'var(--space-4)' }}>
+                        <Link to="/dashboard" className="site-nav__link">{t('common:nav.dashboard')}</Link>
+                        <button onClick={handleLogout} className="site-nav__link" type="button">
+                            {t('common:nav.logout')}
+                        </button>
                     </div>
                 ) : (
-                    <Link to="/login" className="hide-mobile" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <span style={{ fontSize: '1.5rem' }}>👤</span>
+                    <Link to="/login" className="site-nav__avatar hide-mobile" aria-label={t('common:nav.residentLogin')}>
+                        <span>👤</span>
                     </Link>
                 )}
 
-                {/* Hamburger Menu Toggle */}
                 <button
+                    type="button"
                     className="burger-btn"
-                    onClick={() => setMenuOpen(!menuOpen)}
-                    style={{
-                        color: 'inherit',
-                        background: 'none',
-                        marginLeft: '10px'
-                    }}
+                    onClick={() => setMenuOpen((open) => !open)}
+                    aria-expanded={menuOpen}
+                    aria-label={menuOpen ? 'Close menu' : 'Open menu'}
                 >
                     {menuOpen ? '✕' : '☰'}
                 </button>
-            </div>
+            </nav>
 
-            {/* Mobile/Expanded Menu */}
-            <div style={{
-                position: 'fixed',
-                top: 0,
-                right: 0,
-                width: '100%',
-                maxWidth: 'min(400px, 85vw)',
-                height: '100vh',
-                background: 'white',
-                color: 'var(--secondary-color)',
-                transition: 'transform 0.3s ease, visibility 0.3s ease',
-                transform: menuOpen ? 'translateX(0)' : 'translateX(100%)',
-                visibility: menuOpen ? 'visible' : 'hidden',
-                boxShadow: '-5px 0 15px rgba(0,0,0,0.1)',
-                padding: 'clamp(80px, 12vh, 100px) clamp(24px, 6vw, 40px) clamp(20px, 4vh, 30px)',
-                zIndex: 1001,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'clamp(16px, 3vh, 20px)',
-                overflowY: 'auto'
-            }}>
-                <div style={{ marginBottom: '8px' }}>
+            {/* Mobile drawer */}
+            <aside className={`drawer ${menuOpen ? 'drawer--open' : ''}`} aria-hidden={!menuOpen}>
+                <div style={{ marginBottom: 'var(--space-2)' }}>
                     <LanguageSwitcher variant="light" />
                 </div>
-                <Link to="/" onClick={() => setMenuOpen(false)} style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)', fontWeight: 600 }}>{t('common:nav.home')}</Link>
-                <Link to="/listings" onClick={() => setMenuOpen(false)} style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)', fontWeight: 600 }}>{t('common:nav.availableUnits')}</Link>
+                <Link to="/" onClick={() => setMenuOpen(false)} className="drawer__link">
+                    {t('common:nav.home')}
+                </Link>
+                <Link to="/listings" onClick={() => setMenuOpen(false)} className="drawer__link">
+                    {t('common:nav.availableUnits')}
+                </Link>
 
-                {/* Mobile Auth Links */}
                 {user ? (
                     <>
-                        <Link to="/dashboard" onClick={() => setMenuOpen(false)} style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)', fontWeight: 600, color: 'var(--primary-color)' }}>{t('common:nav.myDashboard')}</Link>
+                        <Link
+                            to="/dashboard"
+                            onClick={() => setMenuOpen(false)}
+                            className="drawer__link drawer__link--brand"
+                        >
+                            {t('common:nav.myDashboard')}
+                        </Link>
                         <button
+                            type="button"
                             onClick={() => { setMenuOpen(false); handleLogout(); }}
-                            style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)', fontWeight: 600, textAlign: 'left', background: 'none', padding: 0, color: 'var(--secondary-color)' }}
+                            className="drawer__link"
+                            style={{ textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
                         >
                             {t('common:nav.logout')}
                         </button>
                     </>
                 ) : (
-                    <Link to="/login" onClick={() => setMenuOpen(false)} style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)', fontWeight: 600, color: 'var(--primary-color)' }}>{t('common:nav.residentLogin')}</Link>
+                    <Link
+                        to="/login"
+                        onClick={() => setMenuOpen(false)}
+                        className="drawer__link drawer__link--brand"
+                    >
+                        {t('common:nav.residentLogin')}
+                    </Link>
                 )}
 
-                <hr style={{ width: '100%', border: 'none', borderTop: '1px solid #eee', margin: 'clamp(12px, 3vh, 20px) 0' }} />
-                <Link to="/apply" onClick={() => setMenuOpen(false)} className="btn-primary" style={{ textAlign: 'center', padding: 'clamp(12px, 3vw, 14px) clamp(20px, 4vw, 24px)', fontSize: 'clamp(0.9rem, 2.5vw, 1rem)' }}>{t('common:nav.applyNow')}</Link>
-            </div>
+                <hr className="drawer__divider" />
 
-            {/* Overlay for menu */}
-            {menuOpen && (
-                <div
+                <Link
+                    to="/apply"
                     onClick={() => setMenuOpen(false)}
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100vh',
-                        background: 'rgba(0,0,0,0.5)',
-                        zIndex: 1000
-                    }}
-                />
+                    className="btn btn-primary btn-lg btn-block"
+                >
+                    {t('common:nav.applyNow')}
+                </Link>
+            </aside>
+
+            {menuOpen && (
+                <div className="drawer-overlay" onClick={() => setMenuOpen(false)} aria-hidden="true" />
             )}
         </header>
     );

@@ -1,42 +1,44 @@
 import { useTranslation } from 'react-i18next';
 
-const languages = [
-    { code: 'fr', label: 'FR', name: 'Français' },
+const LANGUAGES = [
+    { code: 'fr',  label: 'FR',  name: 'Français' },
     { code: 'fon', label: 'Fon', name: 'Fɔngbe' },
-    { code: 'en', label: 'EN', name: 'English' },
-];
+    { code: 'en',  label: 'EN',  name: 'English' },
+] as const;
 
-export function LanguageSwitcher({ variant = 'light' }: { variant?: 'light' | 'dark' }) {
+interface LanguageSwitcherProps {
+    variant?: 'light' | 'dark';
+}
+
+export function LanguageSwitcher({ variant = 'light' }: LanguageSwitcherProps) {
     const { i18n } = useTranslation();
 
     const changeLanguage = (lng: string) => {
         i18n.changeLanguage(lng);
-        localStorage.setItem('xwegbe-lang', lng);
+        try {
+            localStorage.setItem('xwegbe-lang', lng);
+        } catch {
+            // Ignore — private mode / storage unavailable.
+        }
     };
 
     return (
-        <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
-            {languages.map((lang) => (
-                <button
-                    key={lang.code}
-                    onClick={() => changeLanguage(lang.code)}
-                    style={{
-                        padding: '4px 8px',
-                        fontSize: '0.75rem',
-                        fontWeight: i18n.language === lang.code ? 700 : 400,
-                        background: i18n.language === lang.code ? 'var(--primary-color)' : 'transparent',
-                        color: i18n.language === lang.code ? 'white' : (variant === 'dark' ? 'rgba(255,255,255,0.8)' : 'inherit'),
-                        border: `1px solid ${i18n.language === lang.code ? 'var(--primary-color)' : (variant === 'dark' ? 'rgba(255,255,255,0.3)' : '#ccc')}`,
-                        borderRadius: '3px',
-                        cursor: 'pointer',
-                        minHeight: '28px',
-                        transition: 'all 0.2s',
-                    }}
-                    title={lang.name}
-                >
-                    {lang.label}
-                </button>
-            ))}
+        <div className={`lang-switcher lang-switcher--${variant}`} role="group" aria-label="Language">
+            {LANGUAGES.map((lang) => {
+                const isActive = i18n.language === lang.code;
+                return (
+                    <button
+                        key={lang.code}
+                        type="button"
+                        onClick={() => changeLanguage(lang.code)}
+                        className={`lang-switcher__btn ${isActive ? 'lang-switcher__btn--active' : ''}`}
+                        title={lang.name}
+                        aria-pressed={isActive}
+                    >
+                        {lang.label}
+                    </button>
+                );
+            })}
         </div>
     );
 }
